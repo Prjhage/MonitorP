@@ -1,0 +1,77 @@
+require('dotenv').config();
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const cors = require('cors');
+const connectDB = require('./config/db');
+
+const authRoutes = require('./routes/auth');
+const apiRoutes = require('./routes/api');
+const publicRoutes = require('./routes/public');
+const heartbeatRoutes = require('./routes/heartbeat');
+const pingRoutes = require('./routes/ping');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: '*',
+    }
+});
+
+// Connect to Database
+connectDB();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/apis', apiRoutes);
+app.use('/api/public', publicRoutes);
+app.use('/api/heartbeats', heartbeatRoutes);
+app.use('/ping', pingRoutes);
+
+app.get('/', (req, res) => {
+    res.send('MonitorP API Server is running...');
+});
+
+// Mock Endpoint for Testing
+// Usage: Add http://localhost:5000/mock-health to your monitor
+let mockStatus = 200;
+app.get('/mock-health', (req, res) => {
+    res.status(mockStatus).json({ status: mockStatus === 200 ? 'ok' : 'error' });
+});
+
+// Helper to toggle mock status: GET /toggle-mock
+app.get('/toggle-mock', (req, res) => {
+    mockStatus = mockStatus === 200 ? 500 : 200;
+    res.send(`Mock status changed to ${mockStatus}`);
+});
+
+// Socket.io
+io.on('connection', (socket) => {
+    console.log('A user connected:', socket.id);
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+    });
+});
+
+const { startMonitoring } = require('./engine/pinger');
+const { startHeartbeatChecker } = require('./engine/heartbeatChecker');
+
+// Start Server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    // Start the monitoring engine
+    startMonitoring(io);
+    startHeartbeatChecker(io);
+});
+app.use(cors({
+    origin: process.env.FRONTEND_URL // Must match your Vercel URL
+}));
+
+module.exports = { io };
