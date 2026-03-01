@@ -19,7 +19,6 @@ export default function Sidebar() {
     { name: 'API Monitoring', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'Heartbeat Monitoring', icon: Heart, path: '/dashboard/heartbeats' },
     { name: 'Incidents Log', icon: Activity, path: '/dashboard/incidents' },
-    { name: 'Settings', icon: Settings, path: '/dashboard/settings' },
   ];
 
   return (
@@ -30,7 +29,7 @@ export default function Sidebar() {
 
       {/* Brand Header */}
       <div className="flex items-center gap-4 mb-14 mt-4 relative z-10">
-        <Link href="/dashboard" className="flex items-center gap-4 group w-full">
+        <Link href="/" className="flex items-center gap-4 group w-full">
           <div className="relative flex items-center justify-center">
             <div className="absolute inset-0 bg-blue-500 blur-lg opacity-40 group-hover:opacity-70 transition-opacity duration-500" />
             <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-105 group-hover:rotate-3 transition-all duration-500 border border-white/20">
@@ -75,7 +74,7 @@ export default function Sidebar() {
 
       {/* User Profile Section */}
       <div className="mt-auto pt-8 relative z-10">
-        <div className="relative p-[1px] rounded-[24px] bg-gradient-to-b from-white/[0.08] to-transparent overflow-hidden mb-4 group cursor-pointer hover:shadow-[0_0_20px_rgba(255,255,255,0.05)] transition-all">
+        <Link href="/dashboard/profile" className="block relative p-[1px] rounded-[24px] bg-gradient-to-b from-white/[0.08] to-transparent overflow-hidden mb-4 group cursor-pointer hover:shadow-[0_0_20px_rgba(255,255,255,0.05)] transition-all">
           <div className="bg-[#0a0a0a]/90 backdrop-blur-md rounded-[23px] px-4 py-4 flex items-center gap-4">
             <div className="relative w-11 h-11 flex-shrink-0">
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full blur-md opacity-40 group-hover:opacity-70 transition-opacity" />
@@ -90,12 +89,8 @@ export default function Sidebar() {
               <span className="text-[14px] font-black text-white truncate group-hover:text-indigo-300 transition-colors">{user?.fullName || 'User'}</span>
               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate mt-0.5">{user?.companyName || 'Workspace'}</span>
             </div>
-
-            {/* <button className="p-2 bg-white/[0.03] hover:bg-white/10 rounded-xl transition-colors shrink-0">
-              <Settings className="w-4 h-4 text-gray-400" />
-            </button> */}
           </div>
-        </div>
+        </Link>
 
         <button
           onClick={logout}

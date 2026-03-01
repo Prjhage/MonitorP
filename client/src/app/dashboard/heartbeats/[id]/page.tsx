@@ -11,6 +11,8 @@ import {
     AlertCircle, Database, Trash2, Zap,
     CheckCircle2, XCircle, Globe2, Pencil, X, Plus, Save, Copy
 } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import { format, formatDistanceToNow } from 'date-fns';
 
 const LABEL = 'block text-[10px] font-black uppercase tracking-[0.12em] text-gray-400 mb-1.5 ml-0.5';
@@ -25,6 +27,8 @@ export default function HeartbeatDetailPage() {
     const [incidents, setIncidents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
+    const { showToast } = useToast();
+    const { confirm } = useConfirm();
 
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -50,17 +54,24 @@ export default function HeartbeatDetailPage() {
     }, [params.id]);
 
     const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to remove this heartbeat monitor?')) {
-            try {
-                console.log('Deleting heartbeat:', params.id);
-                await deleteHeartbeat(params.id as string);
-                router.push('/dashboard/heartbeats');
-                router.refresh(); // Ensure list is updated
-            } catch (error) {
-                console.error('Failed to delete', error);
-                alert('Failed to delete heartbeat. Please try again.');
+        confirm({
+            title: 'Delete Heartbeat',
+            message: 'Are you sure you want to remove this heartbeat monitor? You will no longer receive alerts for this service.',
+            confirmText: 'Delete Monitor',
+            type: 'danger',
+            onConfirm: async () => {
+                try {
+                    console.log('Deleting heartbeat:', params.id);
+                    await deleteHeartbeat(params.id as string);
+                    showToast('Heartbeat monitor deleted', 'success');
+                    router.push('/dashboard/heartbeats');
+                    router.refresh(); // Ensure list is updated
+                } catch (error) {
+                    console.error('Failed to delete', error);
+                    showToast('Failed to delete heartbeat. Please try again.', 'error');
+                }
             }
-        }
+        });
     };
 
     const [origin, setOrigin] = useState('');

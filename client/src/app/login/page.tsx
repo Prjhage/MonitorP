@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { motion } from 'framer-motion';
 import { Shield, Mail, Lock, ArrowRight } from 'lucide-react';
 
@@ -11,15 +12,17 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { login } = useAuth();
+    const { showToast } = useToast();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         try {
             await login({ email, password });
+            showToast('Welcome back!', 'success');
         } catch (error) {
             console.error(error);
-            alert('Login failed. Please check your credentials.');
+            showToast('Login failed. Please check your credentials.', 'error');
         } finally {
             setIsLoading(false);
         }

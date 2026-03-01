@@ -11,6 +11,8 @@ import {
     AlertCircle, Database, Trash2, Play, Pause,
     CheckCircle2, XCircle, Globe2, Pencil, X, Plus, Save
 } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import { format, formatDistanceToNow } from 'date-fns';
 
 // ─── Styles (inline so Tailwind v4 can't drop them) ──────────────────────────
@@ -90,6 +92,8 @@ export default function DetailPage() {
     const [data, setData] = useState<any>(null);
     const [regionalStats, setRegionalStats] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const { showToast } = useToast();
+    const { confirm } = useConfirm();
 
     // Edit panel state
     const [isEditing, setIsEditing] = useState(false);
@@ -151,9 +155,11 @@ export default function DetailPage() {
             const { data: updated } = await api.patch(`/apis/${params.id}`, editForm);
             setData((prev: any) => ({ ...prev, api: updated }));
             setSaveSuccess(true);
+            showToast('Changes saved successfully', 'success');
             setTimeout(() => { setIsEditing(false); setSaveSuccess(false); }, 900);
         } catch (err) {
             console.error('Failed to save', err);
+            showToast('Failed to save changes', 'error');
         } finally {
             setSaving(false);
         }
@@ -169,14 +175,21 @@ export default function DetailPage() {
     };
 
     const handleDelete = async () => {
-        if (confirm('Are you sure you want to remove this monitor? This will delete all historical logs.')) {
-            try {
-                await deleteApi(params.id as string);
-                router.push('/dashboard');
-            } catch {
-                alert('Failed to delete monitor');
+        confirm({
+            title: 'Delete Monitor',
+            message: 'Are you sure you want to remove this monitor? This will delete all historical logs and configuration permanentely.',
+            confirmText: 'Delete Forever',
+            type: 'danger',
+            onConfirm: async () => {
+                try {
+                    await deleteApi(params.id as string);
+                    showToast('Monitor deleted successfully', 'success');
+                    router.push('/dashboard');
+                } catch {
+                    showToast('Failed to delete monitor', 'error');
+                }
             }
-        }
+        });
     };
 
     // ── Loading skeleton ──────────────────────────────────────────────────────

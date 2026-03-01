@@ -19,6 +19,8 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from "@/context/AuthContext";
 import { CacheProvider } from "@/context/CacheContext";
+import { ToastProvider } from "@/context/ToastContext";
+import { ConfirmProvider } from "@/context/ConfirmContext";
 
 export default function RootLayout({
   children,
@@ -33,8 +35,12 @@ export default function RootLayout({
       >
         <AuthProvider>
           <CacheProvider>
-            <div className="mesh-bg" />
-            {children}
+            <ToastProvider>
+              <ConfirmProvider>
+                <div className="mesh-bg" />
+                {children}
+              </ConfirmProvider>
+            </ToastProvider>
           </CacheProvider>
         </AuthProvider>
       </body>

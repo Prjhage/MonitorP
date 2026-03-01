@@ -9,23 +9,37 @@ import { useAuth } from '@/context/AuthContext';
 export default function LandingPage() {
   const { user } = useAuth();
   const [dots, setDots] = React.useState<{ top: number, left: number, delay: number, duration: number }[]>([]);
+  const [scrolled, setScrolled] = React.useState(false);
 
   React.useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+
     setDots([...Array(20)].map(() => ({
       top: Math.random() * 100,
       left: Math.random() * 100,
       delay: Math.random() * 5,
       duration: 3 + Math.random() * 4
     })));
+
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#030303]">
+    <div className="min-h-screen relative overflow-hidden bg-background">
       {/* Animated Background */}
-      <div className="fixed inset-0 z-0">
-        <div className="bg-animate" />
-        <div className="mesh-circle w-[800px] h-[800px] bg-blue-600/10 -top-[200px] -left-[100px]" />
-        <div className="mesh-circle w-[600px] h-[600px] bg-purple-600/10 -bottom-[100px] -right-[100px] animation-delay-2000" />
+      <div className="fixed inset-0 z-0 bg-background">
+        {/* The Grid Layer - Tinted & Sharp */}
+        <div className="bg-grid opacity-60" />
+
+        {/* Background Light Center - Adding a subtle glow to the middle for depth */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/5 blur-[120px] rounded-full opacity-60 pointer-events-none" />
+
+        {/* Mesh Gradients - Vibrant & Large */}
+        <div className="mesh-circle w-[1200px] h-[1200px] bg-blue-600/15 -top-[400px] -left-[300px]" />
+        <div className="mesh-circle w-[1000px] h-[1000px] bg-indigo-600/15 -bottom-[200px] -right-[200px] animation-delay-2000" />
+        <div className="mesh-circle w-[700px] h-[700px] bg-purple-600/10 top-[15%] left-[25%]" />
+        <div className="mesh-circle w-[800px] h-[800px] bg-sky-500/10 bottom-[20%] right-[30%] animation-delay-5000" />
 
         {/* Blinking Spots */}
         {dots.map((dot, i) => (
@@ -36,44 +50,62 @@ export default function LandingPage() {
               top: `${dot.top}%`,
               left: `${dot.left}%`,
               animationDelay: `${dot.delay}s`,
-              animationDuration: `${dot.duration}s`
+              animationDuration: `${dot.duration}s`,
+              width: dot.top % 2 === 0 ? '1px' : '2px', // Varied size
+              height: dot.top % 2 === 0 ? '1px' : '2px',
+              opacity: 0.2 + (dot.left % 0.3)
             }}
           />
         ))}
-        <div className="noise-overlay" />
+        <div className="noise-overlay opacity-[0.02]" />
       </div>
 
-      <div className="relative z-10">
-        <nav className="flex items-center justify-between px-10 py-6 max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-              <Shield className="text-white w-6 h-6" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-white">MonitorP</span>
-          </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-          </div>
-          <div className="flex items-center gap-4">
-            {user ? (
-              <>
-                <Link href="/dashboard" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
-                  Dashboard
-                </Link>
-                <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                  <User className="w-5 h-5 text-gray-400" />
+      <div className="relative z-10 pt-24">
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b ${scrolled
+          ? 'bg-background/80 backdrop-blur-xl border-white/10 py-4 shadow-2xl'
+          : 'bg-transparent border-transparent py-6'
+          }`}>
+          <div className="flex items-center justify-between px-10 max-w-7xl mx-auto">
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="relative flex items-center justify-center">
+                {/* BRAND ICON GLOW - High Intensity Pulse */}
+                <div className="absolute inset-0 bg-blue-500 blur-[25px] opacity-40 group-hover:opacity-80 transition-opacity duration-500 rounded-xl animate-pulse" />
+                <div className="relative w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center border border-white/40 shadow-[0_0_25px_rgba(59,130,246,0.6)] transform group-hover:scale-110 transition-all duration-500">
+                  <Shield className="text-white w-6 h-6 drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]" />
                 </div>
-              </>
-            ) : (
-              <>
-                <Link href="/login" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
-                  Sign In
-                </Link>
-                <Link href="/register" className="premium-button">
-                  Start Free
-                </Link>
-              </>
-            )}
+              </div>
+              <span className="text-xl font-black tracking-tighter text-white group-hover:text-blue-400 transition-colors">Monitor<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">P</span></span>
+            </Link>
+            <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
+              <a href="#features" className="hover:text-white transition-colors">Features</a>
+              <Link href="/faq" className="hover:text-white transition-colors">FAQ</Link>
+            </div>
+            <div className="flex items-center gap-4">
+              {user ? (
+                <>
+                  <Link href="/dashboard" className="text-sm font-medium text-gray-400 hover:text-white transition-colors mr-2">
+                    Dashboard
+                  </Link>
+                  <Link href="/dashboard/profile" className="relative group/user flex items-center justify-center">
+                    {/* USER ICON GLOW - High Intensity Pink/Indigo */}
+                    <div className="absolute inset-0 bg-indigo-500 blur-[25px] opacity-30 group-hover/user:opacity-70 transition-opacity duration-500 rounded-full animate-pulse" />
+                    <div className="relative w-10 h-10 rounded-full bg-[#111] p-[0.5px] border border-white/30 flex items-center justify-center overflow-hidden transition-all duration-500 group-hover/user:scale-110 group-hover/user:border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.4)]">
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/30 to-purple-500/30" />
+                      <User className="w-5 h-5 text-gray-400 group-hover/user:text-white transition-colors" />
+                    </div>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
+                    Sign In
+                  </Link>
+                  <Link href="/register" className="premium-button">
+                    Start Free
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </nav>
 
@@ -122,7 +154,7 @@ export default function LandingPage() {
             </motion.div>
           </div>
 
-          {/* Floating Dashboard Preview (Proper Redesign) */}
+          {/* Floating Dashboard Preview */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -168,14 +200,15 @@ export default function LandingPage() {
                       <div key={mock.name} className="bg-[#0c0c0e] border border-white/5 rounded-[24px] p-8 relative overflow-hidden group/card hover:border-white/10 transition-all">
                         <div className="flex justify-between items-start mb-10">
                           <div className="flex items-center gap-5">
-                            <div className="relative w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center">
+                            <div className="relative w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center overflow-hidden">
+                              <div className={`absolute inset-0 blur-xl opacity-20 ${mock.type === 'HB' ? 'bg-pink-500' : 'bg-blue-500'}`} />
                               {mock.type === 'HB' ? (
-                                <Heart className="w-6 h-6 text-pink-500" />
+                                <Heart className="w-6 h-6 text-pink-500 relative z-10" />
                               ) : (
-                                <Activity className="w-6 h-6 text-blue-500" />
+                                <Activity className="w-6 h-6 text-blue-500 relative z-10" />
                               )}
                               <div
-                                className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#0c0c0e]"
+                                className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#0c0c0e] z-20"
                                 style={{ backgroundColor: mock.color }}
                               />
                             </div>
@@ -250,54 +283,72 @@ export default function LandingPage() {
             <p className="text-gray-500 text-lg">Powerful monitoring tools for modern development teams.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                icon: <Code2 className="w-8 h-8 text-blue-500" />,
+                icon: <Code2 className="w-6 h-6" />,
                 title: "Advanced API Testing",
-                desc: "Full support for custom headers, query parameters, and JSON request bodies — just like Postman."
+                desc: "Full support for custom headers, query parameters, and JSON request bodies — just like Postman.",
+                color: "blue"
               },
               {
-                icon: <CheckSquare className="w-8 h-8 text-purple-500" />,
+                icon: <CheckSquare className="w-6 h-6" />,
                 title: "Dynamic Assertions",
-                desc: "Verify status codes, response times, and body content to ensure your API logic is working 100%."
+                desc: "Verify status codes, response times, and body content to ensure your API logic is working 100%.",
+                color: "purple"
               },
               {
-                icon: <Globe className="w-8 h-8 text-amber-500" />,
+                icon: <Globe className="w-6 h-6" />,
                 title: "Public Status Pages",
-                desc: "Build customer trust with beautiful, branded status pages that update in real-time."
+                desc: "Build customer trust with beautiful, branded status pages that update in real-time.",
+                color: "amber"
               },
               {
-                icon: <Zap className="w-8 h-8 text-emerald-500" />,
-                title: "Optimized Engine",
-                desc: "Persistent connection pooling and staggered pings ensure ultra-low overhead and accurate latency."
-              },
-              {
-                icon: <Bell className="w-8 h-8 text-rose-500" />,
+                icon: <Bell className="w-6 h-6" />,
                 title: "Instant Incident Alerts",
-                desc: "Get notified via Email the exact second your service becomes degraded or unreachable."
+                desc: "Get notified via Email the exact second your service becomes degraded or unreachable.",
+                color: "rose"
               },
               {
-                icon: <Activity className="w-8 h-8 text-indigo-500" />,
+                icon: <Activity className="w-6 h-6" />,
                 title: "Regional Monitoring",
-                desc: "We verify your services from multiple global regions to catch localized network issues."
+                desc: "We verify your services from multiple global regions to catch localized network issues.",
+                color: "indigo"
               },
               {
-                icon: <Heart className="w-8 h-8 text-pink-500" />,
+                icon: <Heart className="w-6 h-6" />,
                 title: "Heartbeat Monitoring",
-                desc: "The ultimate 'Dead Man's Switch' for cron jobs and internal tasks. Monitor what pings can't reach."
+                desc: "The ultimate 'Dead Man's Switch' for cron jobs and internal tasks. Monitor what pings can't reach.",
+                color: "pink"
               }
-            ].map((feature, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -8 }}
-                className="glass-card p-10 group"
-              >
-                <div className="mb-6">{feature.icon}</div>
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-blue-400 transition-colors">{feature.title}</h3>
-                <p className="text-gray-500 leading-relaxed font-medium">{feature.desc}</p>
-              </motion.div>
-            ))}
+            ].map((feature, i) => {
+              const colors = {
+                blue: "text-blue-500 bg-blue-500/10 border-blue-500/20 shadow-blue-500/10",
+                purple: "text-purple-500 bg-purple-500/10 border-purple-500/20 shadow-purple-500/10",
+                amber: "text-amber-500 bg-amber-500/10 border-amber-500/20 shadow-amber-500/10",
+                emerald: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20 shadow-emerald-500/10",
+                rose: "text-rose-500 bg-rose-500/10 border-rose-500/20 shadow-rose-500/10",
+                indigo: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20 shadow-indigo-500/10",
+                pink: "text-pink-500 bg-pink-500/10 border-pink-500/20 shadow-pink-500/10",
+              };
+
+              return (
+                <motion.div
+                  key={i}
+                  whileHover={{ y: -8, scale: 1.02 }}
+                  className="glass-card p-10 group relative overflow-hidden"
+                >
+                  <div className={`absolute -top-12 -left-12 w-24 h-24 blur-[60px] opacity-0 group-hover:opacity-40 transition-opacity duration-500 ${colors[feature.color as keyof typeof colors].split(' ')[0].replace('text-', 'bg-')}`} />
+
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-500 mb-8 shadow-lg group-hover:scale-110 ${colors[feature.color as keyof typeof colors]}`}>
+                    {feature.icon}
+                  </div>
+
+                  <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-white transition-colors">{feature.title}</h3>
+                  <p className="text-gray-500 leading-relaxed font-medium group-hover:text-gray-400 transition-colors">{feature.desc}</p>
+                </motion.div>
+              );
+            })}
           </div>
         </section>
 
@@ -305,10 +356,18 @@ export default function LandingPage() {
         <footer className="py-20 px-6 border-t border-white/5">
           <div className="max-w-7xl mx-auto flex flex-col items-center">
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Shield className="text-white w-5 h-5" />
+              <div className="relative flex items-center justify-center">
+                <div className="absolute inset-0 bg-blue-500 blur-md opacity-30 rounded-lg" />
+                <div className="relative w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center border border-white/20 shadow-lg">
+                  <Shield className="text-white w-5 h-5" />
+                </div>
               </div>
-              <span className="text-lg font-bold tracking-tight text-white">MonitorP</span>
+              <span className="text-lg font-black tracking-tighter text-white">Monitor<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">P</span></span>
+            </div>
+            <div className="flex items-center gap-8 mb-8 text-sm text-gray-500 font-medium">
+              <Link href="/" className="hover:text-white transition-colors">Home</Link>
+              <Link href="/faq" className="hover:text-white transition-colors">FAQ</Link>
+              <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
             </div>
             <p className="text-gray-600 mb-8 max-w-md text-center">
               The world's most reliable API monitoring platform for modern engineering teams.

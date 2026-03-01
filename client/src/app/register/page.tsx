@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { motion } from 'framer-motion';
 import { Shield, Mail, Lock, User, Building, ArrowRight } from 'lucide-react';
 
@@ -15,6 +16,7 @@ export default function RegisterPage() {
     });
     const [isLoading, setIsLoading] = useState(false);
     const { register } = useAuth();
+    const { showToast } = useToast();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,9 +27,10 @@ export default function RegisterPage() {
         setIsLoading(true);
         try {
             await register(formData);
+            showToast('Account created successfully!', 'success');
         } catch (error) {
             console.error(error);
-            alert('Registration failed. Please try again.');
+            showToast('Registration failed. Please try again.', 'error');
         } finally {
             setIsLoading(false);
         }

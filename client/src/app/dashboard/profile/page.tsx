@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Settings as SettingsIcon, Shield, Share2, Mail, ExternalLink, Copy, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function SettingsPage() {
+export default function ProfilePage() {
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [publicUrl, setPublicUrl] = useState('');
@@ -27,9 +27,9 @@ export default function SettingsPage() {
     <div className="p-10 max-w-4xl mx-auto">
       <header className="mb-10">
         <h2 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-          <SettingsIcon className="w-8 h-8 text-blue-500" /> Account Settings
+          <Shield className="w-8 h-8 text-blue-500" /> My Profile
         </h2>
-        <p className="text-gray-500">Manage your profile and trust-sharing settings</p>
+        <p className="text-gray-500">Manage your personal information and public status page</p>
       </header>
 
       <div className="space-y-8">
