@@ -26,6 +26,11 @@ export default function HeartbeatsPage() {
     const [isAdding, setIsAdding] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [createdHb, setCreatedHb] = useState<any>(null);
+    const [origin, setOrigin] = useState('');
+
+    React.useEffect(() => {
+        setOrigin(window.location.origin);
+    }, []);
 
     const [form, setForm] = useState({
         name: '',
@@ -41,7 +46,6 @@ export default function HeartbeatsPage() {
         try {
             const data = await addHeartbeat(form);
             setCreatedHb(data);
-            // Don't close immediately, show the success state with URL
         } catch (err) {
             console.error('Failed to add Heartbeat', err);
         } finally {
@@ -58,6 +62,8 @@ export default function HeartbeatsPage() {
     const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
     const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
+    const pingUrl = createdHb ? `${origin.replace('3000', '5000')}/ping/${createdHb.slug}` : '';
+
     return (
         <motion.div initial="hidden" animate="show" variants={containerVariants} className="p-10">
             <motion.header variants={itemVariants} className="flex justify-between items-center mb-10">
@@ -72,9 +78,9 @@ export default function HeartbeatsPage() {
                 <div className="flex items-center gap-4">
                     <div className="relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4 group-focus-within:text-pink-400 transition-colors" />
-                        <input type="text" placeholder="Find heartbeat..." className="premium-input pl-12 pr-4 py-2.5 w-72" />
+                        <input type="text" placeholder="Find heartbeat..." className="premium-input pl-12 pr-4 py-2.5 w-72" suppressHydrationWarning />
                     </div>
-                    <button onClick={() => setIsAdding(true)} className="premium-button flex items-center gap-2 bg-gradient-to-r from-pink-600 to-rose-600">
+                    <button onClick={() => setIsAdding(true)} suppressHydrationWarning className="premium-button flex items-center gap-2 bg-gradient-to-r from-pink-600 to-rose-600">
                         <Plus className="w-5 h-5" /> Add Heartbeat
                     </button>
                 </div>
@@ -98,7 +104,7 @@ export default function HeartbeatsPage() {
                     </div>
                     <h3 className="text-2xl font-black text-white mb-2 tracking-tight">No Heartbeats Configured</h3>
                     <p className="text-gray-500 mb-8 font-medium">Create a heartbeat monitor for your cron jobs or background tasks.</p>
-                    <button onClick={() => setIsAdding(true)} className="premium-button flex items-center gap-3 px-8 text-lg bg-pink-600">
+                    <button onClick={() => setIsAdding(true)} suppressHydrationWarning className="premium-button flex items-center gap-3 px-8 text-lg bg-pink-600">
                         <Plus className="w-6 h-6" /> Add Your First Heartbeat
                     </button>
                 </motion.div>
@@ -138,9 +144,9 @@ export default function HeartbeatsPage() {
                                             <label className={LABEL}>Your Unique Ping URL</label>
                                             <div className="flex items-center gap-2 p-4 bg-black/40 border border-white/10 rounded-2xl">
                                                 <code className="text-xs text-pink-400 font-mono flex-1 break-all">
-                                                    {window.location.origin.replace('3000', '5000')}/ping/{createdHb.slug}
+                                                    {pingUrl}
                                                 </code>
-                                                <button onClick={() => navigator.clipboard.writeText(`${window.location.origin.replace('3000', '5000')}/ping/${createdHb.slug}`)}
+                                                <button onClick={() => navigator.clipboard.writeText(pingUrl)}
                                                     className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition-all">
                                                     Copy
                                                 </button>
@@ -150,7 +156,7 @@ export default function HeartbeatsPage() {
                                         <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl space-y-3">
                                             <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Example (cURL)</p>
                                             <code className="text-[10px] text-gray-400 block bg-black/20 p-3 rounded-lg">
-                                                curl {window.location.origin.replace('3000', '5000')}/ping/{createdHb.slug}
+                                                curl {pingUrl}
                                             </code>
                                         </div>
 
@@ -165,7 +171,7 @@ export default function HeartbeatsPage() {
                                             <div className="relative">
                                                 <Heart className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                                 <input type="text" required placeholder="e.g. Nightly DB Backup" value={form.name}
-                                                    onChange={e => setForm({ ...form, name: e.target.value })} className={INPUT} style={{ paddingLeft: '3rem' }} />
+                                                    onChange={e => setForm({ ...form, name: e.target.value })} className={INPUT} style={{ paddingLeft: '3rem' }} suppressHydrationWarning />
                                             </div>
                                         </div>
 
@@ -175,7 +181,7 @@ export default function HeartbeatsPage() {
                                                 <div className="relative">
                                                     <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                                     <input type="number" required value={form.expectedEvery}
-                                                        onChange={e => setForm({ ...form, expectedEvery: e.target.value === '' ? '' : parseInt(e.target.value) } as any)} className={INPUT} style={{ paddingLeft: '3rem' }} />
+                                                        onChange={e => setForm({ ...form, expectedEvery: e.target.value === '' ? '' : parseInt(e.target.value) } as any)} className={INPUT} style={{ paddingLeft: '3rem' }} suppressHydrationWarning />
                                                 </div>
                                             </div>
                                             <div>
@@ -195,17 +201,17 @@ export default function HeartbeatsPage() {
                                                 <div className="relative">
                                                     <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                                     <input type="number" required value={form.gracePeriod}
-                                                        onChange={e => setForm({ ...form, gracePeriod: e.target.value === '' ? '' : parseInt(e.target.value) } as any)} className={INPUT} style={{ paddingLeft: '3rem' }} />
+                                                        onChange={e => setForm({ ...form, gracePeriod: e.target.value === '' ? '' : parseInt(e.target.value) } as any)} className={INPUT} style={{ paddingLeft: '3rem' }} suppressHydrationWarning />
                                                 </div>
                                             </div>
                                             <div>
                                                 <label className={LABEL}>Alert Email</label>
                                                 <input type="email" placeholder="alerts@company.com" value={form.alertEmail}
-                                                    onChange={e => setForm({ ...form, alertEmail: e.target.value })} className={INPUT} />
+                                                    onChange={e => setForm({ ...form, alertEmail: e.target.value })} className={INPUT} suppressHydrationWarning />
                                             </div>
                                         </div>
 
-                                        <button type="submit" disabled={submitting} className="w-full premium-button py-4 bg-gradient-to-r from-pink-600 to-rose-600 text-lg">
+                                        <button type="submit" disabled={submitting} className="w-full premium-button py-4 bg-gradient-to-r from-pink-600 to-rose-600 text-lg" suppressHydrationWarning>
                                             {submitting ? 'Creating...' : 'Create Heartbeat Monitor'}
                                         </button>
                                     </form>

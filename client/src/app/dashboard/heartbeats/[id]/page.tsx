@@ -63,10 +63,16 @@ export default function HeartbeatDetailPage() {
         }
     };
 
+    const [origin, setOrigin] = useState('');
+
+    useEffect(() => {
+        setOrigin(window.location.origin);
+    }, []);
+
     if (loading) return <div className="p-10 text-white">Loading...</div>;
     if (!data) return <div className="p-10 text-white">Heartbeat not found.</div>;
 
-    const pingUrl = `${window.location.origin.replace('3000', '5000')}/ping/${data.slug}`;
+    const pingUrl = `${origin.replace('3000', '5000')}/ping/${data.slug}`;
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-10 max-w-7xl mx-auto">

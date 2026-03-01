@@ -75,9 +75,9 @@ function KVEditor({ label, pairs, onChange }: { label: string; pairs: KVPair[]; 
                 {pairs.map((pair, i) => (
                     <div key={i} className="flex gap-2">
                         <input value={pair.key} onChange={(e) => update(i, 'key', e.target.value)}
-                            placeholder="Key" className={INPUT + ' flex-1'} />
+                            placeholder="Key" className={INPUT + ' flex-1'} suppressHydrationWarning />
                         <input value={pair.value} onChange={(e) => update(i, 'value', e.target.value)}
-                            placeholder="Value" className={INPUT + ' flex-1'} />
+                            placeholder="Value" className={INPUT + ' flex-1'} suppressHydrationWarning />
                         <button type="button" onClick={() => onChange(pairs.filter((_, idx) => idx !== i))}
                             className="p-3 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all border border-white/[0.07] shrink-0">
                             <X className="w-4 h-4" />
@@ -133,11 +133,11 @@ function AssertionEditor({ assertions, onChange }: { assertions: Assertion[]; on
                         <div className="flex gap-2">
                             {a.type === 'body_json_path' && (
                                 <input value={a.jsonPath || ''} onChange={(e) => update(i, 'jsonPath', e.target.value)}
-                                    placeholder="JSON path (e.g. data.status)" className={INPUT + ' flex-1'} />
+                                    placeholder="JSON path (e.g. data.status)" className={INPUT + ' flex-1'} suppressHydrationWarning />
                             )}
                             <input value={a.value} onChange={(e) => update(i, 'value', e.target.value)}
                                 placeholder={a.type === 'response_time' ? 'e.g. 300ms' : a.type === 'status_code' ? 'e.g. 200' : 'expected value'}
-                                className={INPUT + ' flex-1'} />
+                                className={INPUT + ' flex-1'} suppressHydrationWarning />
                         </div>
                     </div>
                 ))}
@@ -197,12 +197,12 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-4">
                     <div className="relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
-                        <input type="text" placeholder="Find API monitor..." className="premium-input pl-12 pr-4 py-2.5 w-72" />
+                        <input type="text" placeholder="Find API monitor..." className="premium-input pl-12 pr-4 py-2.5 w-72" suppressHydrationWarning />
                     </div>
-                    <button className="p-3 bg-white/[0.03] text-gray-400 hover:text-white rounded-xl border border-white/[0.06] transition-all hover:border-white/10">
+                    <button className="p-3 bg-white/[0.03] text-gray-400 hover:text-white rounded-xl border border-white/[0.06] transition-all hover:border-white/10" suppressHydrationWarning>
                         <Bell className="w-5 h-5" />
                     </button>
-                    <button onClick={() => setIsAdding(true)} className="premium-button flex items-center gap-2">
+                    <button onClick={() => setIsAdding(true)} className="premium-button flex items-center gap-2" suppressHydrationWarning>
                         <Plus className="w-5 h-5" /> Add Monitor
                     </button>
                 </div>
@@ -345,7 +345,7 @@ export default function DashboardPage() {
                                                         <input type="text" required placeholder="e.g. Payment Gateway API"
                                                             value={newApi.name}
                                                             onChange={(e) => setNewApi({ ...newApi, name: e.target.value })}
-                                                            className={INPUT} style={{ paddingLeft: '2.5rem' }} />
+                                                            className={INPUT} style={{ paddingLeft: '2.5rem' }} suppressHydrationWarning />
                                                     </div>
                                                 </div>
                                                 <div>
@@ -355,7 +355,7 @@ export default function DashboardPage() {
                                                         <input type="url" required placeholder="https://api.yourcompany.com/health"
                                                             value={newApi.url}
                                                             onChange={(e) => setNewApi({ ...newApi, url: e.target.value })}
-                                                            className={INPUT} style={{ paddingLeft: '2.5rem' }} />
+                                                            className={INPUT} style={{ paddingLeft: '2.5rem' }} suppressHydrationWarning />
                                                     </div>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4">
@@ -375,7 +375,7 @@ export default function DashboardPage() {
                                                             <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                                                             <input type="number" defaultValue={200}
                                                                 onChange={(e) => setNewApi({ ...newApi, expectedStatus: parseInt(e.target.value) })}
-                                                                className={INPUT} style={{ paddingLeft: '2.5rem' }} />
+                                                                className={INPUT} style={{ paddingLeft: '2.5rem' }} suppressHydrationWarning />
                                                         </div>
                                                     </div>
                                                     <div>
@@ -393,7 +393,7 @@ export default function DashboardPage() {
                                                         <input type="email" placeholder="alerts@company.com"
                                                             value={newApi.alertEmail}
                                                             onChange={(e) => setNewApi({ ...newApi, alertEmail: e.target.value })}
-                                                            className={INPUT} />
+                                                            className={INPUT} suppressHydrationWarning />
                                                     </div>
                                                 </div>
                                             </motion.div>
