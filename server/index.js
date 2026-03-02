@@ -23,7 +23,22 @@ const io = new Server(server, {
 connectDB();
 
 // Middleware
-app.use(cors());
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'http://localhost:3000',
+].filter(Boolean);
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl, Postman)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+}));
 app.use(express.json());
 
 // Routes
@@ -70,8 +85,6 @@ server.listen(PORT, () => {
     startMonitoring(io);
     startHeartbeatChecker(io);
 });
-app.use(cors({
-    origin: process.env.FRONTEND_URL // Must match your Vercel URL
-}));
+
 
 module.exports = { io };

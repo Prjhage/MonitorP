@@ -30,6 +30,9 @@ export default function HeartbeatDetailPage() {
     const { showToast } = useToast();
     const { confirm } = useConfirm();
 
+    // Derive the backend base URL from the env var (strip trailing /api)
+    const backendBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);
         setCopied(true);
@@ -74,16 +77,10 @@ export default function HeartbeatDetailPage() {
         });
     };
 
-    const [origin, setOrigin] = useState('');
-
-    useEffect(() => {
-        setOrigin(window.location.origin);
-    }, []);
-
     if (loading) return <div className="p-10 text-white">Loading...</div>;
     if (!data) return <div className="p-10 text-white">Heartbeat not found.</div>;
 
-    const pingUrl = `${origin.replace('3000', '5000')}/ping/${data.slug}`;
+    const pingUrl = `${backendBase}/ping/${data.slug}`;
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-10 max-w-7xl mx-auto">

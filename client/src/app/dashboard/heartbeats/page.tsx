@@ -26,11 +26,9 @@ export default function HeartbeatsPage() {
     const [isAdding, setIsAdding] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [createdHb, setCreatedHb] = useState<any>(null);
-    const [origin, setOrigin] = useState('');
 
-    React.useEffect(() => {
-        setOrigin(window.location.origin);
-    }, []);
+    // Derive the backend base URL from the env var (strip trailing /api)
+    const backendBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
 
     const [form, setForm] = useState({
         name: '',
@@ -62,7 +60,8 @@ export default function HeartbeatsPage() {
     const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
     const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
-    const pingUrl = createdHb ? `${origin.replace('3000', '5000')}/ping/${createdHb.slug}` : '';
+    const pingUrl = createdHb ? `${backendBase}/ping/${createdHb.slug}` : '';
+
 
     return (
         <motion.div initial="hidden" animate="show" variants={containerVariants} className="p-10">
