@@ -26,6 +26,13 @@ export default function HeartbeatsPage() {
     const [isAdding, setIsAdding] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [createdHb, setCreatedHb] = useState<any>(null);
+    const [copied, setCopied] = useState<'url' | 'curl' | null>(null);
+
+    const handleCopy = (text: string, type: 'url' | 'curl') => {
+        navigator.clipboard.writeText(text);
+        setCopied(type);
+        setTimeout(() => setCopied(null), 2000);
+    };
 
     // Derive the backend base URL from the env var (strip trailing /api)
     const backendBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
@@ -145,16 +152,32 @@ export default function HeartbeatsPage() {
                                                 <code className="text-xs text-pink-400 font-mono flex-1 break-all">
                                                     {pingUrl}
                                                 </code>
-                                                <button onClick={() => navigator.clipboard.writeText(pingUrl)}
-                                                    className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition-all">
-                                                    Copy
+                                                <button
+                                                    onClick={() => handleCopy(pingUrl, 'url')}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${copied === 'url'
+                                                            ? 'bg-emerald-500/20 text-emerald-400'
+                                                            : 'bg-white/5 hover:bg-white/10 text-white'
+                                                        }`}
+                                                >
+                                                    {copied === 'url' ? '✓ Copied!' : 'Copy'}
                                                 </button>
                                             </div>
                                         </div>
 
                                         <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl space-y-3">
-                                            <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Example (cURL)</p>
-                                            <code className="text-[10px] text-gray-400 block bg-black/20 p-3 rounded-lg">
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Example (cURL)</p>
+                                                <button
+                                                    onClick={() => handleCopy(`curl ${pingUrl}`, 'curl')}
+                                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${copied === 'curl'
+                                                            ? 'bg-emerald-500/20 text-emerald-400'
+                                                            : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'
+                                                        }`}
+                                                >
+                                                    {copied === 'curl' ? '✓ Copied' : 'Copy'}
+                                                </button>
+                                            </div>
+                                            <code className="text-[10px] text-gray-400 block bg-black/20 p-3 rounded-lg break-all whitespace-pre-wrap">
                                                 curl {pingUrl}
                                             </code>
                                         </div>

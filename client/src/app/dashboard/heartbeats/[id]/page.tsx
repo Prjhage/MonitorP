@@ -148,34 +148,27 @@ export default function HeartbeatDetailPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
                                     <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-3">cURL / Bash</p>
-                                    <code className="text-[11px] text-gray-400 leading-relaxed block bg-black/20 p-3 rounded-lg">
-                                        curl {pingUrl}
-                                    </code>
+                                    <div className="relative group/curl">
+                                        <code className="text-[11px] text-gray-400 leading-relaxed block bg-black/20 p-3 rounded-lg break-all whitespace-pre-wrap">
+                                            curl {pingUrl}
+                                        </code>
+                                        <button
+                                            onClick={() => handleCopy(`curl ${pingUrl}`)}
+                                            className="absolute top-2 right-2 p-1.5 bg-white/5 hover:bg-white/10 rounded-lg opacity-0 group-hover/curl:opacity-100 transition-all text-gray-400 hover:text-white"
+                                            title="Copy cURL command"
+                                        >
+                                            <Copy className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl flex flex-col">
                                     <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-3">Node.js (Axios)</p>
                                     <div className="relative group/code flex-1">
-                                        <div className="bg-black/40 rounded-xl p-4 border border-white/5 font-mono text-[11px] text-gray-400 leading-relaxed overflow-x-auto">
-                                            <div className="text-gray-600 mb-2">// Install: npm install axios</div>
-                                            <div className="flex gap-2">
-                                                <span className="text-purple-400">const</span>
-                                                <span className="text-blue-400">axios</span>
-                                                <span className="text-gray-500">=</span>
-                                                <span className="text-yellow-400">require</span>
-                                                <span className="text-gray-500">(</span>
-                                                <span className="text-emerald-400">'axios'</span>
-                                                <span className="text-gray-500">);</span>
-                                            </div>
-                                            <div className="mt-2 flex gap-2">
-                                                <span className="text-purple-400">await</span>
-                                                <span className="text-blue-400">axios</span>
-                                                <span className="text-gray-500">.</span>
-                                                <span className="text-yellow-400">get</span>
-                                                <span className="text-gray-500">(</span>
-                                                <span className="text-emerald-400">'{pingUrl}'</span>
-                                                <span className="text-gray-500">);</span>
-                                            </div>
-                                        </div>
+                                        <pre className="bg-black/40 rounded-xl p-4 border border-white/5 font-mono text-[11px] text-gray-400 leading-relaxed whitespace-pre-wrap break-all">
+                                            {`// npm install axios
+const axios = require('axios');
+await axios.get('${pingUrl}');`}
+                                        </pre>
                                         <button
                                             onClick={() => handleCopy(`await axios.get('${pingUrl}');`)}
                                             className="absolute top-3 right-3 p-2 bg-white/5 hover:bg-white/10 rounded-lg opacity-0 group-hover/code:opacity-100 transition-all text-gray-400 hover:text-white"
