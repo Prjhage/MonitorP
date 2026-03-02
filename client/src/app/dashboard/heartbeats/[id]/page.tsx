@@ -68,7 +68,7 @@ export default function HeartbeatDetailPage() {
                     await deleteHeartbeat(params.id as string);
                     showToast('Heartbeat monitor deleted', 'success');
                     router.push('/dashboard/heartbeats');
-                    router.refresh(); // Ensure list is updated
+                    router.refresh();
                 } catch (error) {
                     console.error('Failed to delete', error);
                     showToast('Failed to delete heartbeat. Please try again.', 'error');
@@ -124,57 +124,111 @@ export default function HeartbeatDetailPage() {
                             <Database className="w-6 h-6 text-pink-500" /> Integration Setup
                         </h3>
 
-                        <div className="space-y-6">
+                        <div className="space-y-4">
+                            {/* Ping URL */}
                             <div>
                                 <label className={LABEL}>Unique Ping URL</label>
-                                <div className="flex items-center gap-3 p-4 bg-black/40 border border-white/10 rounded-2xl relative group/url">
-                                    <code className="text-sm text-pink-400 font-mono flex-1 break-all">{pingUrl}</code>
+                                <div className="flex items-center gap-3 p-4 bg-black/50 border border-pink-500/25 rounded-2xl">
+                                    <code className="text-sm text-pink-400 font-mono flex-1 break-all leading-relaxed">{pingUrl}</code>
                                     <button
                                         onClick={() => handleCopy(pingUrl)}
-                                        className={`p-2 rounded-lg transition-all flex items-center gap-2 ${copied ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}
+                                        className={`shrink-0 px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-bold border ${copied
+                                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                                : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border-white/10'
+                                            }`}
                                     >
                                         {copied ? (
-                                            <>
-                                                <span className="text-[10px] font-black uppercase tracking-widest">Copied!</span>
-                                                <CheckCircle2 className="w-4 h-4" />
-                                            </>
+                                            <><CheckCircle2 className="w-3.5 h-3.5" /><span>Copied!</span></>
                                         ) : (
-                                            <Copy className="w-5 h-5" />
+                                            <><Copy className="w-3.5 h-3.5" /><span>Copy URL</span></>
                                         )}
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
-                                    <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-3">cURL / Bash</p>
-                                    <div className="relative group/curl">
-                                        <code className="text-[11px] text-gray-400 leading-relaxed block bg-black/20 p-3 rounded-lg break-all whitespace-pre-wrap">
-                                            curl {pingUrl}
-                                        </code>
-                                        <button
-                                            onClick={() => handleCopy(`curl ${pingUrl}`)}
-                                            className="absolute top-2 right-2 p-1.5 bg-white/5 hover:bg-white/10 rounded-lg opacity-0 group-hover/curl:opacity-100 transition-all text-gray-400 hover:text-white"
-                                            title="Copy cURL command"
-                                        >
-                                            <Copy className="w-3.5 h-3.5" />
-                                        </button>
+                            {/* cURL */}
+                            <div className="rounded-2xl overflow-hidden border border-white/[0.07]">
+                                <div className="flex items-center justify-between px-4 py-2.5 bg-[#0d1520] border-b border-white/[0.07]">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-blue-400" />
+                                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.15em]">cURL / Bash</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleCopy(`curl ${pingUrl}`)}
+                                        className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center gap-1.5"
+                                    >
+                                        <Copy className="w-3 h-3" /> Copy
+                                    </button>
+                                </div>
+                                <div className="bg-[#060910] p-4 font-mono text-[12px] leading-7 break-all">
+                                    <span className="text-yellow-400">curl </span>
+                                    <span className="text-pink-400">{pingUrl}</span>
+                                </div>
+                            </div>
+
+                            {/* Node.js */}
+                            <div className="rounded-2xl overflow-hidden border border-white/[0.07]">
+                                <div className="flex items-center justify-between px-4 py-2.5 bg-[#071a10] border-b border-white/[0.07]">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.15em]">Node.js (Axios)</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleCopy(`const axios = require('axios');\nawait axios.get('${pingUrl}');`)}
+                                        className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center gap-1.5"
+                                    >
+                                        <Copy className="w-3 h-3" /> Copy
+                                    </button>
+                                </div>
+                                <div className="bg-[#060910] p-4 font-mono text-[12px] leading-7 space-y-0.5">
+                                    <div className="text-gray-600">{'// npm install axios'}</div>
+                                    <div>
+                                        <span className="text-purple-400">const </span>
+                                        <span className="text-blue-300">axios </span>
+                                        <span className="text-gray-500">= </span>
+                                        <span className="text-yellow-400">require</span>
+                                        <span className="text-gray-400">(</span>
+                                        <span className="text-emerald-300">&apos;axios&apos;</span>
+                                        <span className="text-gray-400">);</span>
+                                    </div>
+                                    <div className="break-all">
+                                        <span className="text-purple-400">await </span>
+                                        <span className="text-blue-300">axios</span>
+                                        <span className="text-gray-500">.</span>
+                                        <span className="text-yellow-400">get</span>
+                                        <span className="text-gray-400">(</span>
+                                        <span className="text-emerald-300 break-all">&apos;{pingUrl}&apos;</span>
+                                        <span className="text-gray-400">);</span>
                                     </div>
                                 </div>
-                                <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl flex flex-col">
-                                    <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-3">Node.js (Axios)</p>
-                                    <div className="relative group/code flex-1">
-                                        <pre className="bg-black/40 rounded-xl p-4 border border-white/5 font-mono text-[11px] text-gray-400 leading-relaxed whitespace-pre-wrap break-all">
-                                            {`// npm install axios
-const axios = require('axios');
-await axios.get('${pingUrl}');`}
-                                        </pre>
-                                        <button
-                                            onClick={() => handleCopy(`await axios.get('${pingUrl}');`)}
-                                            className="absolute top-3 right-3 p-2 bg-white/5 hover:bg-white/10 rounded-lg opacity-0 group-hover/code:opacity-100 transition-all text-gray-400 hover:text-white"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                        </button>
+                            </div>
+
+                            {/* Python */}
+                            <div className="rounded-2xl overflow-hidden border border-white/[0.07]">
+                                <div className="flex items-center justify-between px-4 py-2.5 bg-[#1a1400] border-b border-white/[0.07]">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-yellow-400" />
+                                        <span className="text-[10px] font-black text-yellow-400 uppercase tracking-[0.15em]">Python (requests)</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleCopy(`import requests\nrequests.get('${pingUrl}')`)}
+                                        className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center gap-1.5"
+                                    >
+                                        <Copy className="w-3 h-3" /> Copy
+                                    </button>
+                                </div>
+                                <div className="bg-[#060910] p-4 font-mono text-[12px] leading-7 space-y-0.5">
+                                    <div>
+                                        <span className="text-purple-400">import </span>
+                                        <span className="text-blue-300">requests</span>
+                                    </div>
+                                    <div className="break-all">
+                                        <span className="text-blue-300">requests</span>
+                                        <span className="text-gray-500">.</span>
+                                        <span className="text-yellow-400">get</span>
+                                        <span className="text-gray-400">(</span>
+                                        <span className="text-emerald-300">&apos;{pingUrl}&apos;</span>
+                                        <span className="text-gray-400">)</span>
                                     </div>
                                 </div>
                             </div>
@@ -261,14 +315,4 @@ await axios.get('${pingUrl}');`}
             </div>
         </motion.div>
     );
-}
-
-// Sub-component Code
-function Code({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-            <polyline points="16 18 22 12 16 6"></polyline>
-            <polyline points="8 6 2 12 8 18"></polyline>
-        </svg>
-    )
 }
