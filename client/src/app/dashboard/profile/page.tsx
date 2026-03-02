@@ -14,7 +14,7 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
       aria-pressed={enabled}
     >
       <span
-        className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-300 ${enabled ? 'translate-x-7' : 'translate-x-1'
+        className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-0'
           }`}
       />
     </button>
@@ -138,8 +138,8 @@ export default function ProfilePage() {
             <button
               onClick={handleSavePrefs}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition-all border ${saved
-                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                  : 'bg-white/5 hover:bg-white/10 text-white border-white/10'
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                : 'bg-white/5 hover:bg-white/10 text-white border-white/10'
                 }`}
             >
               {saved ? '✓ Saved' : 'Save Preferences'}
