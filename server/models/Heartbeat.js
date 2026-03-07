@@ -33,8 +33,42 @@ const heartbeatSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['UP', 'DOWN', 'PENDING'],
+        enum: ['UP', 'DOWN', 'PENDING', 'RUNNING'],
         default: 'PENDING'
+    },
+    scheduleType: {
+        type: String,
+        enum: ['interval', 'cron'],
+        default: 'interval'
+    },
+    cronExpression: {
+        type: String,
+        default: null
+    },
+    timezone: {
+        type: String,
+        default: 'UTC'
+    },
+    maxDuration: {
+        type: Number,
+        default: null // in minutes/seconds/hours
+    },
+    maxDurationUnit: {
+        type: String,
+        enum: ['seconds', 'minutes', 'hours'],
+        default: 'minutes'
+    },
+    avgJobDuration: {
+        type: Number,
+        default: 0 // ms
+    },
+    lastJobDuration: {
+        type: Number,
+        default: 0 // ms
+    },
+    currentJobStartedAt: {
+        type: Date,
+        default: null
     },
     lastPingAt: {
         type: Date,
@@ -47,6 +81,10 @@ const heartbeatSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    isPaused: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
 

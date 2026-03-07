@@ -62,7 +62,7 @@ function KVEditor({ label, pairs, onChange }: { label: string; pairs: KVPair[]; 
             <div className="flex items-center justify-between mb-3">
                 <span className={LABEL}>{label}</span>
                 <button type="button" onClick={() => onChange([...pairs, { key: '', value: '' }])}
-                    className="flex items-center gap-1.5 text-xs font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg transition-all">
+                    className="flex items-center gap-1.5 text-xs font-bold text-white btn-glow-blue px-3 py-1.5 rounded-lg transition-all">
                     <Plus className="w-3 h-3" /> Add
                 </button>
             </div>
@@ -103,7 +103,7 @@ function AssertionEditor({ assertions, onChange }: { assertions: Assertion[]; on
                 <span className={LABEL}>Assertion Rules</span>
                 <button type="button"
                     onClick={() => onChange([...assertions, { type: 'response_time', operator: 'lt', value: '500' }])}
-                    className="flex items-center gap-1.5 text-xs font-bold text-violet-400 hover:text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 px-3 py-1.5 rounded-lg transition-all">
+                    className="flex items-center gap-1.5 text-xs font-bold text-white btn-glow-purple px-3 py-1.5 rounded-lg transition-all">
                     <Plus className="w-3 h-3" /> Add Rule
                 </button>
             </div>
@@ -195,21 +195,21 @@ export default function DashboardPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="relative group">
+                    <div id="tour-search" className="relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
                         <input type="text" placeholder="Find API monitor..." className="premium-input pl-12 pr-4 py-2.5 w-72" suppressHydrationWarning />
                     </div>
                     <button className="p-3 bg-white/[0.03] text-gray-400 hover:text-white rounded-xl border border-white/[0.06] transition-all hover:border-white/10" suppressHydrationWarning>
                         <Bell className="w-5 h-5" />
                     </button>
-                    <button onClick={() => setIsAdding(true)} className="premium-button flex items-center gap-2" suppressHydrationWarning>
+                    <button id="tour-add-monitor" onClick={() => setIsAdding(true)} className="premium-button btn-glow-purple flex items-center gap-2" suppressHydrationWarning>
                         <Plus className="w-5 h-5" /> Add Monitor
                     </button>
                 </div>
             </motion.header>
 
             {/* ─── API Grid ───────────────────────────────────────────── */}
-            <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <motion.div id="tour-api-grid" variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <AnimatePresence mode="popLayout">
                     {apis.map((a) => (
                         <motion.div key={a._id} variants={itemVariants} layout initial="hidden" animate="show"
@@ -256,7 +256,7 @@ export default function DashboardPage() {
                     </div>
                     <h3 className="text-2xl font-black text-white mb-2 tracking-tight">No Monitors Active</h3>
                     <p className="text-gray-500 mb-8 font-medium">Start watching your infrastructure by adding your first endpoint.</p>
-                    <button onClick={() => setIsAdding(true)} className="premium-button flex items-center gap-3 px-8 text-lg">
+                    <button onClick={() => setIsAdding(true)} className="premium-button btn-glow-blue flex items-center gap-3 px-8 text-lg">
                         <Plus className="w-6 h-6" /> Add Your First Monitor
                     </button>
                 </motion.div>
@@ -302,13 +302,15 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Tab bar */}
-                            <div className="relative z-10 flex gap-1.5 px-7 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <div id="tour-form-tabs" className="relative z-10 flex gap-1.5 px-7 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                                 {tabs.map((tab) => {
                                     const isActive = activeTab === tab.id;
                                     const count = tab.id === 'assertions' ? newApi.assertions.length :
                                         tab.id === 'advanced' ? newApi.headers.length + newApi.queryParams.length : 0;
                                     return (
-                                        <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
+                                        <button key={tab.id} type="button"
+                                            id={`tour-tab-${tab.id}`}
+                                            onClick={() => setActiveTab(tab.id)}
                                             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200"
                                             style={isActive ? {
                                                 background: 'linear-gradient(135deg, rgba(59,130,246,0.9), rgba(99,102,241,0.9))',
@@ -332,13 +334,13 @@ export default function DashboardPage() {
 
                             {/* Form body */}
                             <form onSubmit={handleAddApi} className="flex flex-col flex-1 overflow-hidden relative z-10">
-                                <div className="flex-1 overflow-y-auto px-7 py-6">
+                                <div className="px-8 pt-6 pb-12 overflow-y-auto max-h-[75vh] custom-scrollbar">
                                     <AnimatePresence mode="wait">
 
                                         {/* ── Basic Tab ────────────────────────── */}
                                         {activeTab === 'basic' && (
                                             <motion.div key="basic" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} className="space-y-5">
-                                                <div>
+                                                <div id="tour-form-name">
                                                     <label className={LABEL}>Friendly Name</label>
                                                     <div className="relative">
                                                         <Activity className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
@@ -348,7 +350,7 @@ export default function DashboardPage() {
                                                             className={INPUT} style={{ paddingLeft: '2.5rem' }} suppressHydrationWarning />
                                                     </div>
                                                 </div>
-                                                <div>
+                                                <div id="tour-form-url">
                                                     <label className={LABEL}>Endpoint URL</label>
                                                     <div className="relative">
                                                         <Globe2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
@@ -378,22 +380,27 @@ export default function DashboardPage() {
                                                                 className={INPUT} style={{ paddingLeft: '2.5rem' }} suppressHydrationWarning />
                                                         </div>
                                                     </div>
-                                                    <div>
+                                                    <div id="tour-form-frequency">
                                                         <label className={LABEL}>Check Interval</label>
                                                         <select value={newApi.interval} style={{ ...SELECT_ARROW }}
                                                             onChange={(e) => setNewApi({ ...newApi, interval: parseInt(e.target.value) })}
                                                             className={SELECT}>
-                                                            <option value={1} className="bg-[#0d0d0d]">Every 1 Minute</option>
-                                                            <option value={5} className="bg-[#0d0d0d]">Every 5 Minutes</option>
-                                                            <option value={15} className="bg-[#0d0d0d]">Every 15 Minutes</option>
+                                                            <option value={60} className="bg-[#0d0d0d]">Every 1 Minute</option>
+                                                            <option value={300} className="bg-[#0d0d0d]">Every 5 Minutes</option>
+                                                            <option value={900} className="bg-[#0d0d0d]">Every 15 Minutes</option>
+                                                            <option value={1800} className="bg-[#0d0d0d]">Every 30 Minutes</option>
+                                                            <option value={3600} className="bg-[#0d0d0d]">Every 1 Hour</option>
                                                         </select>
                                                     </div>
-                                                    <div>
+                                                    <div id="tour-form-email">
                                                         <label className={LABEL}>Alert Email</label>
-                                                        <input type="email" placeholder="alerts@company.com"
-                                                            value={newApi.alertEmail}
-                                                            onChange={(e) => setNewApi({ ...newApi, alertEmail: e.target.value })}
-                                                            className={INPUT} suppressHydrationWarning />
+                                                        <div className="relative">
+                                                            <Bell className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                                            <input type="email" placeholder="alerts@company.com"
+                                                                value={newApi.alertEmail || ''}
+                                                                onChange={(e) => setNewApi({ ...newApi, alertEmail: e.target.value })}
+                                                                className={INPUT} style={{ paddingLeft: '2.5rem' }} suppressHydrationWarning />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </motion.div>
@@ -402,15 +409,20 @@ export default function DashboardPage() {
                                         {/* ── Advanced Tab ─────────────────────── */}
                                         {activeTab === 'advanced' && (
                                             <motion.div key="advanced" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} className="space-y-7">
-                                                <KVEditor label="Request Headers" pairs={newApi.headers}
-                                                    onChange={(h) => setNewApi({ ...newApi, headers: h })} />
+                                                <div id="tour-form-headers">
+                                                    <KVEditor label="Request Headers" pairs={newApi.headers}
+                                                        onChange={(h) => setNewApi({ ...newApi, headers: h })} />
+                                                </div>
                                                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} />
-                                                <KVEditor label="Query Parameters" pairs={newApi.queryParams}
-                                                    onChange={(q) => setNewApi({ ...newApi, queryParams: q })} />
+                                                <div id="tour-form-params">
+                                                    <KVEditor label="Query Parameters" pairs={newApi.queryParams}
+                                                        onChange={(q) => setNewApi({ ...newApi, queryParams: q })} />
+                                                </div>
                                                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} />
-                                                <div>
+                                                <div id="tour-form-body">
                                                     <label className={LABEL}>Request Body (JSON)</label>
                                                     <textarea rows={5} value={newApi.body}
+                                                        id="tour-form-body-input"
                                                         onChange={(e) => setNewApi({ ...newApi, body: e.target.value })}
                                                         placeholder={'{\n  "key": "value"\n}'}
                                                         className={TEXTAREA} />
@@ -422,13 +434,15 @@ export default function DashboardPage() {
                                         {/* ── Assertions Tab ────────────────────── */}
                                         {activeTab === 'assertions' && (
                                             <motion.div key="assertions" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }}>
-                                                <div className="mb-5 p-4 rounded-2xl" style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.2)' }}>
-                                                    <p className="text-xs text-violet-300 leading-relaxed">
-                                                        <span className="font-black">Assertions</span> are rules evaluated on every ping. If any rule fails, the monitor is marked as <span className="font-bold text-amber-400">DEGRADED</span>.
-                                                    </p>
+                                                <div id="tour-form-assertions">
+                                                    <div className="mb-5 p-4 rounded-2xl" style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.2)' }}>
+                                                        <p className="text-xs text-violet-300 leading-relaxed">
+                                                            <span className="font-black">Assertions</span> are rules evaluated on every ping. If any rule fails, the monitor is marked as <span className="font-bold text-amber-400">DEGRADED</span>.
+                                                        </p>
+                                                    </div>
+                                                    <AssertionEditor assertions={newApi.assertions}
+                                                        onChange={(a) => setNewApi({ ...newApi, assertions: a })} />
                                                 </div>
-                                                <AssertionEditor assertions={newApi.assertions}
-                                                    onChange={(a) => setNewApi({ ...newApi, assertions: a })} />
                                             </motion.div>
                                         )}
 
@@ -455,13 +469,12 @@ export default function DashboardPage() {
                                         {activeTab !== 'assertions' && (
                                             <button type="button"
                                                 onClick={() => setActiveTab(activeTab === 'basic' ? 'advanced' : 'assertions')}
-                                                className="px-5 py-2.5 rounded-xl font-bold text-sm text-blue-400 transition-all"
-                                                style={{ border: '1px solid rgba(59,130,246,0.25)', background: 'rgba(59,130,246,0.06)' }}>
+                                                className="px-5 py-2.5 rounded-xl font-bold text-sm text-white btn-glow-blue transition-all">
                                                 Next →
                                             </button>
                                         )}
-                                        <button type="submit" disabled={submitting}
-                                            className="premium-button py-2.5 px-7 text-sm disabled:opacity-50">
+                                        <button id="tour-form-submit" type="submit" disabled={submitting}
+                                            className="premium-button btn-glow-emerald py-2.5 px-7 text-sm disabled:opacity-50">
                                             {submitting ? 'Saving...' : '✓ Start Monitoring'}
                                         </button>
                                     </div>

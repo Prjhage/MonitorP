@@ -20,13 +20,22 @@ interface HeartbeatMonitor {
     _id: string;
     name: string;
     slug: string;
-    status: 'UP' | 'DOWN' | 'PENDING';
+    status: 'UP' | 'DOWN' | 'PENDING' | 'RUNNING';
     lastPingAt: string;
     nextExpectedAt: string;
     isActive: boolean;
+    isPaused: boolean;
     expectedEvery: number;
     expectedEveryUnit: 'minutes' | 'hours' | 'days';
     gracePeriod: number;
+    scheduleType?: 'interval' | 'cron';
+    cronExpression?: string;
+    timezone?: string;
+    maxDuration?: number;
+    maxDurationUnit?: 'seconds' | 'minutes' | 'hours';
+    avgJobDuration?: number;
+    lastJobDuration?: number;
+    currentJobStartedAt?: string;
     alertEmail: string;
 }
 
@@ -43,6 +52,7 @@ interface CacheContextType {
     deleteApi: (id: string) => Promise<void>;
     deleteHeartbeat: (id: string) => Promise<void>;
     toggleApi: (id: string) => Promise<void>;
+    toggleHeartbeat: (id: string) => Promise<any>;
 }
 
 const CacheContext = createContext<CacheContextType>({} as CacheContextType);
@@ -130,6 +140,13 @@ export const CacheProvider = ({ children }: { children: React.ReactNode }) => {
         return data; // Return updated data to caller
     };
 
+    const toggleHeartbeat = async (id: string) => {
+        console.log('!!!!!!!! [PAUSE TRIGGERED] ID:', id);
+        const { data } = await api.patch(`/heartbeats/${id}/toggle`);
+        updateHeartbeat(id, data);
+        return data;
+    };
+
     useEffect(() => {
         if (user?.token) {
             fetchApis();
@@ -159,7 +176,7 @@ export const CacheProvider = ({ children }: { children: React.ReactNode }) => {
     return (
         <CacheContext.Provider value={{
             apis, heartbeats, loading, fetchApis, fetchHeartbeats,
-            addApi, addHeartbeat, updateApi, updateHeartbeat, deleteApi, deleteHeartbeat, toggleApi
+            addApi, addHeartbeat, updateApi, updateHeartbeat, deleteApi, deleteHeartbeat, toggleApi, toggleHeartbeat
         }}>
             {children}
         </CacheContext.Provider>

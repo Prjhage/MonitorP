@@ -6,6 +6,32 @@ const HeartbeatIncident = require('../models/HeartbeatIncident');
 const { protect } = require('../middleware/auth');
 const { generateSlug } = require('../utils/slug');
 
+// @desc    Toggle heartbeat pause status
+// @route   PATCH /api/heartbeats/:id/toggle
+router.patch('/:id/toggle', protect, async (req, res) => {
+    console.log('--- [!!!] TOGGLE ROUTE HIT [!!!] ---');
+    console.log('ID:', req.params.id);
+    console.log('User:', req.user._id);
+    try {
+        const heartbeat = await Heartbeat.findById(req.params.id);
+        if (!heartbeat) {
+            console.log('Heartbeat not found in DB');
+            return res.status(404).json({ message: 'Heartbeat not found' });
+        }
+        if (heartbeat.userId.toString() !== req.user._id.toString()) {
+            console.log('Ownership mismatch');
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+        heartbeat.isPaused = !heartbeat.isPaused;
+        await heartbeat.save();
+        console.log('Success, isPaused is now:', heartbeat.isPaused);
+        res.json(heartbeat);
+    } catch (error) {
+        console.error('Toggle error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // @desc    Get all heartbeats for logged in user
 // @route   GET /api/heartbeats
 router.get('/', protect, async (req, res) => {
@@ -20,22 +46,31 @@ router.get('/', protect, async (req, res) => {
 // @desc    Create new heartbeat monitor
 // @route   POST /api/heartbeats
 router.post('/', protect, async (req, res) => {
-    const { name, expectedEvery, expectedEveryUnit, gracePeriod, alertEmail } = req.body;
+    const {
+        name, expectedEvery, expectedEveryUnit, gracePeriod, alertEmail,
+        scheduleType, cronExpression, timezone, maxDuration, maxDurationUnit
+    } = req.body;
 
     try {
         const heartbeat = await Heartbeat.create({
             userId: req.user._id,
             name,
             slug: generateSlug(),
-            expectedEvery,
-            expectedEveryUnit,
+            expectedEvery: expectedEvery || (scheduleType === 'cron' ? 0 : 24),
+            expectedEveryUnit: expectedEveryUnit || 'hours',
             gracePeriod: gracePeriod || 30,
             alertEmail: alertEmail || req.user.email,
-            status: 'PENDING'
+            status: 'PENDING',
+            scheduleType: scheduleType || 'interval',
+            cronExpression,
+            timezone,
+            maxDuration,
+            maxDurationUnit
         });
 
         res.status(201).json(heartbeat);
     } catch (error) {
+        console.error('Create Heartbeat Error:', error);
         res.status(400).json({ message: error.message });
     }
 });
@@ -82,6 +117,11 @@ router.delete('/:id', protect, async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
+});
+
+// Connectivity test
+router.get('/test/connectivity', (req, res) => {
+    res.json({ message: 'Heartbeat router is reachable' });
 });
 
 module.exports = router;

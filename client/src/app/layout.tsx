@@ -1,3 +1,4 @@
+import React from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -21,6 +22,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { CacheProvider } from "@/context/CacheContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { ConfirmProvider } from "@/context/ConfirmContext";
+import DesktopOnly from "@/components/layout/DesktopOnly";
 
 export default function RootLayout({
   children,
@@ -37,6 +39,7 @@ export default function RootLayout({
           <CacheProvider>
             <ToastProvider>
               <ConfirmProvider>
+                <DesktopOnly />
                 <div className="mesh-bg" />
                 {children}
               </ConfirmProvider>

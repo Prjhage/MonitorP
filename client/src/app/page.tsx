@@ -148,8 +148,8 @@ export default function LandingPage() {
               <Link href="/register" className="premium-button text-lg px-10 py-4 flex items-center gap-3 group">
                 Get Started for Free <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link href="/dashboard" className="px-10 py-4 rounded-xl font-medium text-gray-300 hover:bg-white/5 border border-white/10 transition-all text-lg">
-                Go to Dashboard
+              <Link href="/dashboard" className="premium-button btn-glow-purple text-lg px-10 py-4 flex items-center gap-3 group">
+                Go to Dashboard <ArrowUpRight className="w-5 h-5 group-hover:rotate-45 transition-transform" />
               </Link>
             </motion.div>
           </div>
@@ -353,27 +353,48 @@ export default function LandingPage() {
         </section>
 
         {/* Footer */}
-        <footer className="py-20 px-6 border-t border-white/5">
-          <div className="max-w-7xl mx-auto flex flex-col items-center">
-            <div className="flex items-center gap-3 mb-8">
+        <footer className="relative py-24 px-6 overflow-hidden">
+          {/* Footer Background & Glow */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-600/5 to-indigo-600/10 z-0" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+          <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
+
+          <div className="max-w-7xl mx-auto flex flex-col items-center relative z-10">
+            <div className="flex items-center gap-3 mb-10 group cursor-default">
               <div className="relative flex items-center justify-center">
-                <div className="absolute inset-0 bg-blue-500 blur-md opacity-30 rounded-lg" />
-                <div className="relative w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center border border-white/20 shadow-lg">
-                  <Shield className="text-white w-5 h-5" />
+                <div className="absolute inset-0 bg-blue-500 blur-xl opacity-40 group-hover:opacity-80 transition-opacity duration-500 rounded-lg animate-pulse" />
+                <div className="relative w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center border border-white/30 shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-transform duration-500 group-hover:scale-110">
+                  <Shield className="text-white w-6 h-6 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
                 </div>
               </div>
-              <span className="text-lg font-black tracking-tighter text-white">Monitor<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">P</span></span>
+              <span className="text-2xl font-black tracking-tighter text-white">Monitor<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">P</span></span>
             </div>
-            <div className="flex items-center gap-8 mb-8 text-sm text-gray-500 font-medium">
-              <Link href="/" className="hover:text-white transition-colors">Home</Link>
-              <Link href="/faq" className="hover:text-white transition-colors">FAQ</Link>
-              <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+
+            <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 mb-12 text-sm font-bold uppercase tracking-widest">
+              <Link href="/" className="text-gray-400 hover:text-blue-400 transition-all hover:scale-105">Home</Link>
+              <Link href="/faq" className="text-gray-400 hover:text-purple-400 transition-all hover:scale-105">FAQ</Link>
+              <Link href="/dashboard" className="text-gray-400 hover:text-emerald-400 transition-all hover:scale-105">Dashboard</Link>
+              <Link href="/status" className="text-gray-400 hover:text-amber-400 transition-all hover:scale-105">Status</Link>
             </div>
-            <p className="text-gray-600 mb-8 max-w-md text-center">
-              The world's most reliable API monitoring platform for modern engineering teams.
+
+            <p className="text-gray-500 mb-12 max-w-lg text-center leading-relaxed font-medium italic">
+              "The world's most reliable API monitoring platform, built for the next generation of high-scale engineering teams."
             </p>
-            <div className="text-sm text-gray-500">
-              &copy; 2026 MonitorP SaaS. All rights reserved.
+
+            <div className="w-full max-w-xs h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent mb-10" />
+
+            <div className="flex flex-col items-center gap-4">
+              <div className="text-[11px] font-black text-gray-600 uppercase tracking-[0.3em] mb-2">
+                &copy; 2026 MonitorP SaaS • SECURED BY ANTIGRAVITY
+              </div>
+              <div className="flex gap-6">
+                <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/5 flex items-center justify-center text-gray-600 hover:text-white hover:border-white/20 transition-all cursor-pointer">
+                  <Globe className="w-4 h-4" />
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/5 flex items-center justify-center text-gray-600 hover:text-white hover:border-white/20 transition-all cursor-pointer">
+                  <Activity className="w-4 h-4" />
+                </div>
+              </div>
             </div>
           </div>
         </footer>

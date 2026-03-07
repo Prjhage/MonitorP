@@ -18,6 +18,7 @@ const io = new Server(server, {
         origin: '*',
     }
 });
+app.set('io', io);
 
 // Connect to Database
 connectDB();
@@ -41,6 +42,12 @@ app.use(cors({
     credentials: true,
 }));
 app.use(express.json());
+
+// Request logging middleware
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);

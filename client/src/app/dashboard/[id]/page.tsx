@@ -265,19 +265,19 @@ export default function DetailPage() {
 
                         <div className="flex items-center gap-3 flex-wrap justify-end">
                             {/* ✏️ Edit button */}
-                            <button onClick={openEdit}
+                            <button id="tour-api-edit" onClick={openEdit}
                                 className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all duration-200 border text-blue-400 border-blue-500/20 hover:bg-blue-500/10">
                                 <Pencil className="w-4 h-4" /> Edit Monitor
                             </button>
 
-                            <button onClick={handleToggle}
+                            <button id="tour-api-pause" onClick={handleToggle}
                                 className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all duration-200 border ${monitor.isActive
                                     ? 'text-amber-500 border-amber-500/10 hover:bg-amber-500/10'
                                     : 'text-emerald-500 border-emerald-500/10 hover:bg-emerald-500/10'
                                     }`}>
                                 {monitor.isActive ? <><Pause className="w-4 h-4" /> Pause</> : <><Play className="w-4 h-4" /> Resume</>}
                             </button>
-                            <button onClick={handleDelete}
+                            <button id="tour-api-delete" onClick={handleDelete}
                                 className="flex items-center gap-2 text-red-500 hover:bg-red-500/10 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all border border-red-500/10">
                                 <Trash2 className="w-4 h-4" /> Delete
                             </button>
@@ -286,13 +286,13 @@ export default function DetailPage() {
                 </motion.header>
 
                 {/* ─── Stats Grid ─────────────────────────────────────────── */}
-                <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <motion.div id="tour-api-stats" variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                     {[
-                        { label: 'Current Uptime (24h)', value: `${uptime.toFixed(2)}%`, icon: Activity, color: 'text-blue-500' },
-                        { label: 'Avg Response Time', value: `${avgResponseTime}ms`, icon: Clock, color: 'text-purple-500' },
-                        { label: 'Incident Count', value: incidents.length, icon: Shield, color: 'text-red-500' }
+                        { id: 'tour-api-uptime', label: 'Current Uptime (24h)', value: `${uptime.toFixed(2)}%`, icon: Activity, color: 'text-blue-500' },
+                        { id: 'tour-api-latency', label: 'Avg Response Time', value: `${avgResponseTime}ms`, icon: Clock, color: 'text-purple-500' },
+                        { id: 'tour-api-incidents-count', label: 'Incident Count', value: incidents.length, icon: Shield, color: 'text-red-500' }
                     ].map((stat, i) => (
-                        <motion.div key={i} whileHover={{ y: -5, scale: 1.02 }}
+                        <motion.div key={i} id={stat.id} whileHover={{ y: -5, scale: 1.02 }}
                             className="glass-card p-8 border border-white/[0.05] hover:border-white/[0.1] transition-colors group">
                             <div className="text-gray-500 text-[11px] font-black uppercase tracking-widest mb-4 flex items-center gap-2">
                                 <stat.icon className={`w-4 h-4 ${stat.color}`} /> {stat.label}
@@ -306,7 +306,7 @@ export default function DetailPage() {
 
                 {/* ─── Assertion Results ────────────────────────────────────── */}
                 {monitor.assertions && monitor.assertions.length > 0 && (
-                    <motion.div variants={itemVariants} className="mb-12">
+                    <motion.div id="tour-api-assertions" variants={itemVariants} className="mb-12">
                         <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 tracking-tight">
                             <CheckCircle2 className="w-6 h-6 text-violet-500" /> Assertion Results
                             <span className="text-sm font-medium text-gray-500 ml-auto">From last ping</span>
@@ -350,7 +350,7 @@ export default function DetailPage() {
                 )}
 
                 {/* ─── Geographic Performance ──────────────────────────────── */}
-                <motion.div variants={itemVariants} className="mb-12">
+                <motion.div id="tour-api-geo" variants={itemVariants} className="mb-12">
                     <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 tracking-tight">
                         <Globe2 className="w-6 h-6 text-blue-500" /> Geographic Performance
                         <span className="text-sm font-medium text-gray-500 ml-auto">Last 48 hours · Simulated</span>
@@ -394,7 +394,7 @@ export default function DetailPage() {
                 </motion.div>
 
                 {/* ─── Incidents Table ─────────────────────────────────────── */}
-                <motion.div variants={itemVariants} className="mb-12">
+                <motion.div id="tour-api-incidents" variants={itemVariants} className="mb-12">
                     <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 tracking-tight">
                         <AlertCircle className="w-6 h-6 text-red-500" /> Recent Incidents
                     </h2>
@@ -429,7 +429,7 @@ export default function DetailPage() {
                 </motion.div>
 
                 {/* ─── Logs Table ──────────────────────────────────────────── */}
-                <motion.div variants={itemVariants}>
+                <motion.div id="tour-api-logs" variants={itemVariants}>
                     <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 tracking-tight">
                         <Database className="w-6 h-6 text-blue-500" /> Recent Ping Logs
                     </h2>

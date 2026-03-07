@@ -10,6 +10,15 @@ const heartbeatPingSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    signalType: {
+        type: String,
+        enum: ['start', 'success', 'fail'],
+        default: 'success'
+    },
+    jobDuration: {
+        type: Number,
+        default: null // ms
+    },
     ipAddress: {
         type: String
     },

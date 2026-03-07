@@ -2,57 +2,66 @@ const cron = require('node-cron');
 const Heartbeat = require('../models/Heartbeat');
 const HeartbeatIncident = require('../models/HeartbeatIncident');
 const User = require('../models/User');
-const { sendHeartbeatAlertEmail } = require('../utils/mailer');
+const { triggerHeartbeatAlert } = require('../utils/heartbeatAlerts');
 
 const startHeartbeatChecker = (io) => {
     // Run every minute
     cron.schedule('* * * * *', async () => {
-        console.log('🔍 Checking heartbeats for misses...');
+        console.log('🔍 Checking heartbeats for misses and timeouts...');
         try {
             const now = new Date();
 
-            // Find heartbeats that are active, not DOWN, and overdue
+            // 1. Check for overdue heartbeats
             const overdue = await Heartbeat.find({
                 isActive: true,
-                status: { $ne: 'DOWN' },
+                isPaused: { $ne: true },
+                status: { $in: ['UP', 'PENDING'] },
                 nextExpectedAt: { $ne: null }
             });
 
             for (const heartbeat of overdue) {
-                // Deadline = nextExpectedAt + gracePeriod
                 const deadline = new Date(heartbeat.nextExpectedAt);
                 deadline.setMinutes(deadline.getMinutes() + (heartbeat.gracePeriod || 30));
 
                 if (now > deadline) {
-                    console.log(`🚨 Heartbeat overdue: ${heartbeat.name}`);
+                    await triggerHeartbeatAlert(
+                        heartbeat,
+                        now,
+                        'MISSED',
+                        `Heartbeat missed: last expected at ${heartbeat.nextExpectedAt.toLocaleString()}`,
+                        io
+                    );
+                }
+            }
 
-                    // Create incident
-                    const incident = await HeartbeatIncident.create({
-                        heartbeatId: heartbeat._id,
-                        userId: heartbeat.userId,
-                        status: 'OPEN',
-                        missedAt: heartbeat.nextExpectedAt,
-                        detectedAt: now,
-                        alertSent: true
-                    });
+            // 2. Check for jobs running too long
+            const runningTooLong = await Heartbeat.find({
+                isActive: true,
+                isPaused: { $ne: true },
+                status: 'RUNNING',
+                currentJobStartedAt: { $ne: null },
+                maxDuration: { $ne: null }
+            });
 
-                    // Update heartbeat status
-                    heartbeat.status = 'DOWN';
-                    await heartbeat.save();
+            for (const heartbeat of runningTooLong) {
+                const startTime = new Date(heartbeat.currentJobStartedAt);
+                let maxMs = heartbeat.maxDuration;
 
-                    // Send Alert Email
-                    const user = await User.findById(heartbeat.userId);
-                    if (user) {
-                        await sendHeartbeatAlertEmail(user, heartbeat, incident);
-                    }
+                if (heartbeat.maxDurationUnit === 'minutes') maxMs *= 60000;
+                else if (heartbeat.maxDurationUnit === 'hours') maxMs *= 3600000;
+                else if (heartbeat.maxDurationUnit === 'seconds') maxMs *= 1000;
 
-                    // Socket update
-                    if (io) {
-                        io.emit('heartbeat-update', {
-                            heartbeatId: heartbeat._id,
-                            status: 'DOWN'
-                        });
-                    }
+                const limitTime = new Date(startTime.getTime() + maxMs);
+
+                if (now > limitTime) {
+                    const diffMins = Math.round((now - startTime) / 60000);
+                    await triggerHeartbeatAlert(
+                        heartbeat,
+                        now,
+                        'TIMEOUT',
+                        `Job running too long: Started at ${startTime.toLocaleTimeString()}, running for ${diffMins} minutes (Max: ${heartbeat.maxDuration} ${heartbeat.maxDurationUnit})`,
+                        io
+                    );
                 }
             }
         } catch (error) {

@@ -16,6 +16,14 @@ const heartbeatIncidentSchema = new mongoose.Schema({
         enum: ['OPEN', 'RESOLVED'],
         default: 'OPEN'
     },
+    type: {
+        type: String,
+        enum: ['MISSED', 'TIMEOUT', 'FAIL'],
+        default: 'MISSED'
+    },
+    message: {
+        type: String
+    },
     missedAt: {
         type: Date
     },
