@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Monitor, Smartphone, Layout } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export default function DesktopOnly() {
     const [isMobile, setIsMobile] = useState(false);
@@ -17,78 +17,115 @@ export default function DesktopOnly() {
         return () => window.removeEventListener('resize', checkSize);
     }, []);
 
+    // Lock body scroll when overlay is active
+    useEffect(() => {
+        if (isMobile) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isMobile]);
+
     if (!isMobile) return null;
 
     return (
-        <div className="fixed inset-0 z-[9999] bg-[#050505] flex items-center justify-center p-6 overflow-hidden">
-            {/* Background Effects */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px]" />
+        <div
+            style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 9999,
+                backgroundColor: '#050505',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '20px',
+                overflow: 'hidden',
+                touchAction: 'none',
+            }}
+        >
+            {/* Background glows */}
+            <div style={{ position: 'absolute', top: '-5%', left: '-5%', width: '50%', height: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: '-5%', right: '-5%', width: '50%', height: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
             <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="relative w-full max-w-md bg-white/[0.03] border border-white/[0.08] backdrop-blur-3xl rounded-[2.5rem] p-10 text-center shadow-2xl overflow-hidden"
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                style={{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: '400px',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '28px',
+                    padding: '32px 24px',
+                    textAlign: 'center',
+                    boxShadow: '0 25px 80px rgba(0,0,0,0.5)',
+                    overflow: 'hidden',
+                }}
             >
-                {/* Decorative mesh */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(59,130,246,0.15),transparent)]" />
+                {/* Inner glow */}
+                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% -10%, rgba(59,130,246,0.15), transparent)', pointerEvents: 'none' }} />
 
-                <div className="relative z-10">
-                    <div className="mb-8 inline-flex items-center justify-center">
-                        <div className="relative">
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                    {/* Icon */}
+                    <div style={{ marginBottom: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ position: 'relative' }}>
                             <motion.div
-                                animate={{
-                                    scale: [1, 1.1, 1],
-                                    opacity: [0.5, 0.8, 0.5]
-                                }}
+                                animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4] }}
                                 transition={{ duration: 4, repeat: Infinity }}
-                                className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full"
+                                style={{ position: 'absolute', inset: '-8px', background: 'rgba(59,130,246,0.2)', borderRadius: '50%', filter: 'blur(16px)' }}
                             />
-                            <div className="relative w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                                <Monitor className="w-12 h-12 text-white" strokeWidth={1.5} />
+                            <div style={{ position: 'relative', width: '80px', height: '80px', background: 'linear-gradient(135deg, #3b82f6, #6366f1)', borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 30px rgba(59,130,246,0.3)' }}>
+                                <Monitor size={38} color="white" strokeWidth={1.5} />
                             </div>
                         </div>
                     </div>
 
-                    <h1 className="text-3xl font-bold text-white mb-4 tracking-tight">
+                    {/* Heading */}
+                    <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', marginBottom: '12px', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
                         Desktop Experience Only
                     </h1>
 
-                    <p className="text-gray-400 text-lg leading-relaxed mb-10">
-                        MonitorP is a professional engineering suite designed for high-resolution displays. Please access this dashboard from a <span className="text-blue-400 font-medium">Desktop or Laptop</span>.
+                    {/* Description */}
+                    <p style={{ color: '#9ca3af', fontSize: '14px', lineHeight: 1.6, marginBottom: '24px' }}>
+                        MonitorP is a professional engineering suite built for high-resolution displays. Please open it on a{' '}
+                        <span style={{ color: '#60a5fa', fontWeight: 500 }}>Desktop or Laptop</span>.
                     </p>
 
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-4 bg-white/[0.05] p-5 rounded-2xl border border-white/[0.05]">
-                            <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
-                                <Smartphone className="w-5 h-5 text-gray-500" />
+                    {/* Device cards */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.04)', padding: '14px 16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.06)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <Smartphone size={18} color="#6b7280" />
                             </div>
-                            <div className="text-left">
-                                <p className="text-sm text-gray-400">Current Device</p>
-                                <p className="text-white font-medium">Mobile / Tablet</p>
+                            <div style={{ textAlign: 'left' }}>
+                                <p style={{ fontSize: '11px', color: '#6b7280', margin: 0 }}>Current Device</p>
+                                <p style={{ fontSize: '14px', color: '#ffffff', fontWeight: 500, margin: 0 }}>Mobile / Tablet</p>
                             </div>
-                            <div className="ml-auto">
-                                <div className="w-2 h-2 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
-                            </div>
+                            <div style={{ marginLeft: 'auto', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%', boxShadow: '0 0 8px rgba(239,68,68,0.6)', flexShrink: 0 }} />
                         </div>
 
-                        <div className="flex items-center gap-4 bg-blue-500/10 p-5 rounded-2xl border border-blue-500/20">
-                            <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                                <Layout className="w-5 h-5 text-blue-400" />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(59,130,246,0.08)', padding: '14px 16px', borderRadius: '16px', border: '1px solid rgba(59,130,246,0.2)' }}>
+                            <div style={{ width: '36px', height: '36px', background: 'rgba(59,130,246,0.15)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <Layout size={18} color="#60a5fa" />
                             </div>
-                            <div className="text-left">
-                                <p className="text-sm text-blue-400/70">Required Device</p>
-                                <p className="text-white font-medium">Desktop (1024px+)</p>
+                            <div style={{ textAlign: 'left' }}>
+                                <p style={{ fontSize: '11px', color: 'rgba(96,165,250,0.7)', margin: 0 }}>Required Device</p>
+                                <p style={{ fontSize: '14px', color: '#ffffff', fontWeight: 500, margin: 0 }}>Desktop (1024px+)</p>
                             </div>
-                            <div className="ml-auto">
-                                <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-                            </div>
+                            <div style={{ marginLeft: 'auto', width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px rgba(34,197,94,0.6)', flexShrink: 0 }} />
                         </div>
                     </div>
 
-                    <div className="mt-12 flex items-center justify-center gap-2 text-gray-500 text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-gray-600" />
-                        <span>monitor-p.com/engineering</span>
+                    {/* Footer */}
+                    <div style={{ marginTop: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#374151' }} />
+                        <span style={{ fontSize: '12px', color: '#4b5563' }}>MonitorP · Desktop Platform</span>
+                        <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#374151' }} />
                     </div>
                 </div>
             </motion.div>
