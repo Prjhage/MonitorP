@@ -374,7 +374,6 @@ export default function LandingPage() {
               <Link href="/" className="text-gray-400 hover:text-blue-400 transition-all hover:scale-105">Home</Link>
               <Link href="/faq" className="text-gray-400 hover:text-purple-400 transition-all hover:scale-105">FAQ</Link>
               <Link href="/dashboard" className="text-gray-400 hover:text-emerald-400 transition-all hover:scale-105">Dashboard</Link>
-              <Link href="/status" className="text-gray-400 hover:text-amber-400 transition-all hover:scale-105">Status</Link>
             </div>
 
             <p className="text-gray-500 mb-12 max-w-lg text-center leading-relaxed font-medium italic">
@@ -385,16 +384,16 @@ export default function LandingPage() {
 
             <div className="flex flex-col items-center gap-4">
               <div className="text-[11px] font-black text-gray-600 uppercase tracking-[0.3em] mb-2">
-                &copy; 2026 MonitorP SaaS • SECURED BY ANTIGRAVITY
+                &copy; 2026 MonitorP SaaS
               </div>
-              <div className="flex gap-6">
+              {/* <div className="flex gap-6">
                 <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/5 flex items-center justify-center text-gray-600 hover:text-white hover:border-white/20 transition-all cursor-pointer">
                   <Globe className="w-4 h-4" />
                 </div>
                 <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/5 flex items-center justify-center text-gray-600 hover:text-white hover:border-white/20 transition-all cursor-pointer">
                   <Activity className="w-4 h-4" />
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </footer>
