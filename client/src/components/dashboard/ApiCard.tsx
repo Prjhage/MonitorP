@@ -18,7 +18,7 @@ interface ApiCardProps {
     onClick: () => void;
 }
 
-export default function ApiCard({ api, onClick }: ApiCardProps) {
+const ApiCard = React.memo(function ApiCard({ api, onClick }: ApiCardProps) {
     const isUp = api.status === 'UP' && api.isActive;
     const isDown = api.status === 'DOWN' && api.isActive;
     const isPaused = !api.isActive;
@@ -42,7 +42,6 @@ export default function ApiCard({ api, onClick }: ApiCardProps) {
 
     return (
         <motion.div
-            layout
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ y: -6, scale: 1.01 }}
@@ -125,4 +124,6 @@ export default function ApiCard({ api, onClick }: ApiCardProps) {
             </div>
         </motion.div>
     );
-}
+});
+
+export default ApiCard;

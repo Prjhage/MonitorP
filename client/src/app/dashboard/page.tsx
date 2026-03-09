@@ -209,58 +209,54 @@ export default function DashboardPage() {
             </motion.header>
 
             {/* ─── API Grid ───────────────────────────────────────────── */}
-            <motion.div id="tour-api-grid" variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <AnimatePresence mode="popLayout">
-                    {apis.map((a) => (
-                        <motion.div key={a._id} variants={itemVariants} layout initial="hidden" animate="show"
-                            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}>
-                            <ApiCard api={a} onClick={() => router.push(`/dashboard/${a._id}`)} />
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-            </motion.div>
-
-            {/* Loading Skeleton */}
-            {loading && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                        <div key={i} className="glass-card p-8 border border-white/[0.05] relative overflow-hidden h-[340px]">
-                            <div className="flex justify-between items-start mb-10">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-3 h-3 rounded-full bg-white/5 animate-pulse" />
-                                    <div className="space-y-2">
-                                        <div className="h-5 w-32 bg-white/5 rounded-full animate-pulse" />
-                                        <div className="h-2 w-20 bg-white/5 rounded-full animate-pulse" />
+            <div id="tour-api-grid" className="mb-10 min-h-[100px]">
+                <AnimatePresence mode="wait">
+                    {loading ? (
+                        <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <div key={i} className="glass-card p-8 border border-white/[0.05] relative overflow-hidden h-[340px]">
+                                    <div className="flex justify-between items-start mb-10">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-3 h-3 rounded-full bg-white/5 animate-pulse" />
+                                            <div className="space-y-2">
+                                                <div className="h-5 w-32 bg-white/5 rounded-full animate-pulse" />
+                                                <div className="h-2 w-20 bg-white/5 rounded-full animate-pulse" />
+                                            </div>
+                                        </div>
+                                        <div className="w-10 h-10 bg-white/5 rounded-xl animate-pulse" />
+                                    </div>
+                                    <div className="space-y-6">
+                                        <div className="h-10 w-full bg-white/5 rounded-2xl animate-pulse" />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="h-24 bg-white/5 rounded-[24px] animate-pulse" />
+                                            <div className="h-24 bg-white/5 rounded-[24px] animate-pulse" />
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="w-10 h-10 bg-white/5 rounded-xl animate-pulse" />
+                            ))}
+                        </motion.div>
+                    ) : apis.length > 0 ? (
+                        <motion.div key="grid" variants={containerVariants} initial="hidden" animate="show" exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {apis.map((a) => (
+                                <motion.div key={a._id} variants={itemVariants} initial="hidden" animate="show" exit={{ opacity: 0, scale: 0.9 }}>
+                                    <ApiCard api={a} onClick={() => router.push(`/dashboard/${a._id}`)} />
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    ) : (
+                        <motion.div key="empty" variants={itemVariants} initial="hidden" animate="show" exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-white/5 rounded-[32px] bg-white/[0.01]">
+                            <div className="w-20 h-20 bg-blue-600/10 rounded-full flex items-center justify-center mb-6 border border-blue-500/20">
+                                <Activity className="w-10 h-10 text-blue-500 animate-pulse" />
                             </div>
-                            <div className="space-y-6">
-                                <div className="h-10 w-full bg-white/5 rounded-2xl animate-pulse" />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="h-24 bg-white/5 rounded-[24px] animate-pulse" />
-                                    <div className="h-24 bg-white/5 rounded-[24px] animate-pulse" />
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* Empty State */}
-            {!loading && apis.length === 0 && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-white/5 rounded-[32px] bg-white/[0.01]">
-                    <div className="w-20 h-20 bg-blue-600/10 rounded-full flex items-center justify-center mb-6 border border-blue-500/20">
-                        <Activity className="w-10 h-10 text-blue-500 animate-pulse" />
-                    </div>
-                    <h3 className="text-2xl font-black text-white mb-2 tracking-tight">No Monitors Active</h3>
-                    <p className="text-gray-500 mb-8 font-medium">Start watching your infrastructure by adding your first endpoint.</p>
-                    <button onClick={() => setIsAdding(true)} className="premium-button btn-glow-blue flex items-center gap-3 px-8 text-lg">
-                        <Plus className="w-6 h-6" /> Add Your First Monitor
-                    </button>
-                </motion.div>
-            )}
+                            <h3 className="text-2xl font-black text-white mb-2 tracking-tight">No Monitors Active</h3>
+                            <p className="text-gray-500 mb-8 font-medium">Start watching your infrastructure by adding your first endpoint.</p>
+                            <button onClick={() => setIsAdding(true)} className="premium-button btn-glow-blue flex items-center gap-3 px-8 text-lg text-white">
+                                <Plus className="w-6 h-6" /> Add Your First Monitor
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
 
             {/* ─── Add API Modal ─────────────────────────────────────── */}
             <AnimatePresence>

@@ -27,7 +27,7 @@ interface HeartbeatCardProps {
     onClick: () => void;
 }
 
-export default function HeartbeatCard({ heartbeat, onClick }: HeartbeatCardProps) {
+const HeartbeatCard = React.memo(function HeartbeatCard({ heartbeat, onClick }: HeartbeatCardProps) {
     const { toggleHeartbeat } = useCache();
     const { showToast } = useToast();
     const isUp = heartbeat.status === 'UP' && !heartbeat.isPaused;
@@ -74,7 +74,6 @@ export default function HeartbeatCard({ heartbeat, onClick }: HeartbeatCardProps
 
     return (
         <motion.div
-            layout
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             whileHover={{ y: -6, scale: 1.01 }}
@@ -194,4 +193,6 @@ export default function HeartbeatCard({ heartbeat, onClick }: HeartbeatCardProps
             </div>
         </motion.div>
     );
-}
+});
+
+export default HeartbeatCard;

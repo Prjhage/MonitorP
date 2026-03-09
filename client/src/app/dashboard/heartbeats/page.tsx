@@ -131,29 +131,30 @@ export default function HeartbeatsPage() {
                 </div>
             </motion.header>
 
-            <motion.div id="tour-hb-list" variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <AnimatePresence mode="popLayout">
-                    {heartbeats.map((hb) => (
-                        <motion.div key={hb._id} variants={itemVariants} layout initial="hidden" animate="show"
-                            exit={{ opacity: 0, scale: 0.9 }}>
-                            <HeartbeatCard heartbeat={hb} onClick={() => router.push(`/dashboard/heartbeats/${hb._id}`)} />
+            <div id="tour-hb-list" className="mb-10 min-h-[100px]">
+                <AnimatePresence mode="wait">
+                    {heartbeats.length > 0 ? (
+                        <motion.div key="grid" variants={containerVariants} initial="hidden" animate="show" exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {heartbeats.map((hb) => (
+                                <motion.div key={hb._id} variants={itemVariants} initial="hidden" animate="show" exit={{ opacity: 0, scale: 0.9 }}>
+                                    <HeartbeatCard heartbeat={hb} onClick={() => router.push(`/dashboard/heartbeats/${hb._id}`)} />
+                                </motion.div>
+                            ))}
                         </motion.div>
-                    ))}
+                    ) : !loading && (
+                        <motion.div key="empty" variants={itemVariants} initial="hidden" animate="show" exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-white/5 rounded-[32px] bg-white/[0.01]">
+                            <div className="w-20 h-20 bg-pink-600/10 rounded-full flex items-center justify-center mb-6 border border-pink-500/20">
+                                <Heart className="w-10 h-10 text-pink-500 animate-pulse" />
+                            </div>
+                            <h3 className="text-2xl font-black text-white mb-2 tracking-tight">No Heartbeats Configured</h3>
+                            <p className="text-gray-500 mb-8 font-medium">Create a heartbeat monitor for your cron jobs or background tasks.</p>
+                            <button onClick={() => setIsAdding(true)} suppressHydrationWarning className="premium-button flex items-center gap-3 px-8 text-lg bg-pink-600">
+                                <Plus className="w-6 h-6" /> Add Your First Heartbeat
+                            </button>
+                        </motion.div>
+                    )}
                 </AnimatePresence>
-            </motion.div>
-
-            {!loading && heartbeats.length === 0 && (
-                <motion.div variants={itemVariants} className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-white/5 rounded-[32px] bg-white/[0.01]">
-                    <div className="w-20 h-20 bg-pink-600/10 rounded-full flex items-center justify-center mb-6 border border-pink-500/20">
-                        <Heart className="w-10 h-10 text-pink-500 animate-pulse" />
-                    </div>
-                    <h3 className="text-2xl font-black text-white mb-2 tracking-tight">No Heartbeats Configured</h3>
-                    <p className="text-gray-500 mb-8 font-medium">Create a heartbeat monitor for your cron jobs or background tasks.</p>
-                    <button onClick={() => setIsAdding(true)} suppressHydrationWarning className="premium-button flex items-center gap-3 px-8 text-lg bg-pink-600">
-                        <Plus className="w-6 h-6" /> Add Your First Heartbeat
-                    </button>
-                </motion.div>
-            )}
+            </div>
 
             <AnimatePresence>
                 {isAdding && (

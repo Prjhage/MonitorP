@@ -111,12 +111,12 @@ export default function Sidebar() {
       steps = [
         { target: '#tour-add-monitor', title: 'Add New Monitor', content: 'Click here to start monitoring a new API endpoint. You can configure headers, body, and custom assertions.' },
         { target: '#tour-search', title: 'Quick Search', content: 'Easily find any monitor by its name or URL using this search bar.' },
-        { target: '#tour-api-grid', title: 'Live Status Grid', content: 'These cards show the real-time status of your APIs. Green means UP, Red means DOWN, and Amber means PENDING or DEGRADED.' },
+        { target: '#tour-api-grid', title: 'Live Status Grid', content: 'These cards show the real-time status of your APIs. Green means UP, Red means DOWN, and Amber means PENDING or DEGRADED.', position: 'right' },
       ];
     } else if (pathname === '/dashboard/heartbeats') {
       steps = [
         { target: '#tour-add-hb', title: 'New Heartbeat', content: 'Set up a new passive monitor for your cron jobs or background tasks.' },
-        { target: '#tour-hb-list', title: 'Heartbeat Monitors', content: 'Track the health of your periodic jobs. You can pause monitoring during maintenance right from the cards.' },
+        { target: '#tour-hb-list', title: 'Heartbeat Monitors', content: 'Track the health of your periodic jobs. You can pause monitoring during maintenance right from the cards.', position: 'right' },
       ];
     } else if (pathname.startsWith('/dashboard/heartbeats/')) {
       steps = [

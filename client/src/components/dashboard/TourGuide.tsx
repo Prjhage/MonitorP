@@ -17,65 +17,160 @@ export default function TourGuide() {
 
     const currentStep = steps[currentStepIndex];
 
+    const requestRef = useRef<number>(null);
+
+    useEffect(() => {
+        if (!isTourActive || !currentStep) {
+            if (requestRef.current) cancelAnimationFrame(requestRef.current);
+            return;
+        }
+
+        const updatePosition = () => {
+            const element = document.querySelector(currentStep.target);
+            if (element) {
+                const rect = element.getBoundingClientRect();
+                const cardWidth = 340;
+                const cardHeight = 360; // Estimated max height
+                const padding = 20;
+                const viewportHeight = window.innerHeight;
+                const viewportWidth = window.innerWidth;
+
+                // Vertical Flipping Logic
+                const spaceBelow = viewportHeight - rect.bottom;
+                const spaceAbove = rect.top;
+                const shouldFlip = spaceBelow < (cardHeight + padding) && spaceAbove > spaceBelow;
+                const newVerticalPos = shouldFlip ? 'top' : 'bottom';
+
+                setFinalPosition(prev => prev !== newVerticalPos ? newVerticalPos : prev);
+
+                // Coordinates Update
+                setCoords(prev => {
+                    if (prev.top === rect.top && prev.left === rect.left && prev.width === rect.width && prev.height === rect.height) return prev;
+                    return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+                });
+            }
+            requestRef.current = requestAnimationFrame(updatePosition);
+        };
+
+        requestRef.current = requestAnimationFrame(updatePosition);
+        return () => {
+            if (requestRef.current) cancelAnimationFrame(requestRef.current);
+        };
+    }, [isTourActive, currentStep]);
+
     useEffect(() => {
         if (isTourActive && currentStep) {
-            const updatePosition = () => {
-                const element = document.querySelector(currentStep.target);
-                if (element) {
-                    const rect = element.getBoundingClientRect();
-                    const cardHeight = 320; // Increased estimate to be safer
-                    const padding = 24;
-                    const viewportHeight = window.innerHeight;
+            const element = document.querySelector(currentStep.target);
+            if (element) {
+                const rect = element.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
 
-                    // Improved Flipping logic: 
-                    // 1. If there's no space below AND space above is better, flip.
-                    // 2. If the element is too tall (>60% of viewport), pin to the top or middle.
-                    const spaceBelow = viewportHeight - rect.bottom;
-                    const spaceAbove = rect.top;
-
-                    const shouldFlip = spaceBelow < (cardHeight + padding) && spaceAbove > spaceBelow;
-                    setFinalPosition(shouldFlip ? 'top' : 'bottom');
-
-                    setCoords({
-                        top: rect.top,
-                        left: rect.left,
-                        width: rect.width,
-                        height: rect.height,
-                    });
-
-                    // Scroll to ensure the element AND the card are likely visible
-                    // If flipping to top, we want to see the top of the element.
-                    // If going to bottom, we want to see the top of the element.
-                    element.scrollIntoView({
-                        behavior: 'smooth',
-                        block: rect.height > viewportHeight * 0.7 ? 'start' : 'center'
-                    });
-                } else {
-                    setCoords({
-                        top: window.innerHeight / 2,
-                        left: window.innerWidth / 2,
-                        width: 0,
-                        height: 0,
-                    });
-                    setFinalPosition('bottom');
-                }
-            };
-
-            updatePosition();
-            const timer = setTimeout(updatePosition, 100); // Re-check after scroll/layout sync
-            window.addEventListener('resize', updatePosition);
-            window.addEventListener('scroll', updatePosition);
-            return () => {
-                clearTimeout(timer);
-                window.removeEventListener('resize', updatePosition);
-                window.removeEventListener('scroll', updatePosition);
-            };
+                // Improved scroll logic: ensure we always see the target AND some extra space for the card
+                const scrollOffset = 100; // Extra buffer
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
         }
-    }, [isTourActive, currentStep, currentStepIndex]);
+    }, [isTourActive, currentStepIndex]); // Only on step change
 
     if (!isMounted) return null;
 
-    if (!isMounted) return null;
+    // Calculate dynamic styles for the guide card
+    const getCardStyles = () => {
+        if (!currentStep || coords.width === 0) return {};
+
+        const cardWidth = 340;
+        const cardHeight = 300; // Estimated height for flipping logic
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const gap = 24;
+
+        let left = 0;
+        let top = 0;
+        let transform = '';
+
+        // Determine if we should be horizontal or vertical
+        const isHorizontalStep = currentStep.position === 'left' || currentStep.position === 'right';
+
+        if (isHorizontalStep) {
+            // Horizontal Logic
+            const side = currentStep.position;
+            const spaceLeft = coords.left;
+            const spaceRight = viewportWidth - (coords.left + coords.width);
+
+            let finalSide = side;
+            // Flip if no space
+            if (side === 'left' && spaceLeft < cardWidth + gap && spaceRight > spaceLeft) {
+                finalSide = 'right';
+            } else if (side === 'right' && spaceRight < cardWidth + gap && spaceLeft > spaceRight) {
+                finalSide = 'left';
+            }
+
+            if (finalSide === 'left') {
+                left = coords.left - cardWidth - gap;
+                top = coords.top + coords.height / 2;
+                transform = 'translateY(-50%)';
+            } else {
+                left = coords.left + coords.width + gap;
+                top = coords.top + coords.height / 2;
+                transform = 'translateY(-50%)';
+            }
+
+            // Clamp vertical within viewport
+            const estimatedTop = top - cardHeight / 2;
+            if (estimatedTop < gap) {
+                top = gap;
+                transform = 'none';
+            } else if (estimatedTop + cardHeight > viewportHeight - gap) {
+                top = viewportHeight - cardHeight - gap;
+                transform = 'none';
+            }
+
+            // Clamp horizontal (though usually flipping handles it)
+            if (left < gap) left = gap;
+            if (left + cardWidth > viewportWidth - gap) left = viewportWidth - cardWidth - gap;
+
+        } else {
+            // Vertical Logic (Existing + Clamping)
+            left = coords.left + coords.width / 2;
+            transform = 'translateX(-50%)';
+
+            // Respect specific alignment if provided (though usually we center)
+            if (currentStep.position === 'left') {
+                left = coords.left;
+                transform = 'none';
+            } else if (currentStep.position === 'right') {
+                left = coords.left + coords.width - cardWidth;
+                transform = 'none';
+            }
+
+            // Clamp horizontally
+            const estimatedLeft = left + (transform === 'none' ? 0 : -cardWidth / 2);
+            if (estimatedLeft < gap) {
+                left = gap;
+                transform = 'none';
+            } else if (estimatedLeft + cardWidth > viewportWidth - gap) {
+                left = viewportWidth - cardWidth - gap;
+                transform = 'none';
+            }
+
+            top = finalPosition === 'top'
+                ? coords.top - gap
+                : coords.top + coords.height + gap;
+
+            const vertTransform = finalPosition === 'top' ? 'translateY(-100%)' : '';
+            transform = transform ? `${transform} ${vertTransform}` : vertTransform;
+        }
+
+        return {
+            top,
+            left,
+            transform,
+            width: `${cardWidth}px`
+        };
+    };
 
     return (
         <AnimatePresence>
@@ -127,16 +222,7 @@ export default function TourGuide() {
                     {currentStep && (
                         <div
                             className="absolute transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-auto"
-                            style={{
-                                top: finalPosition === 'top'
-                                    ? coords.top - 20
-                                    : coords.top + coords.height + 20,
-                                left: coords.left + coords.width / 2,
-                                transform: finalPosition === 'top'
-                                    ? 'translateX(-50%) translateY(-100%)'
-                                    : 'translateX(-50%)',
-                                width: '340px'
-                            }}
+                            style={getCardStyles()}
                         >
                             <AnimatePresence mode="wait">
                                 <motion.div
