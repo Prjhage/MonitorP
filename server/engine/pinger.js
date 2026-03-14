@@ -6,7 +6,6 @@ const PingLog = require('../models/PingLog');
 const Incident = require('../models/Incident');
 const User = require('../models/User');
 const cron = require('node-cron');
-const REGIONS = require('../config/regions');
 const { sendAlertEmail, sendRecoveryEmail } = require('../utils/mailer');
 
 // Reuse connections to skip DNS/TCP/TLS handshake overhead on repeated pings
@@ -161,36 +160,30 @@ const pingAPI = async (api) => {
 };
 
 // -------------------------------------------------------------------
-// Process a single ping (one region)
-// -------------------------------------------------------------------
-// Write all region logs in one bulk insert (much faster than 5 separate creates)
-const saveRegionalLogs = async (api, baseResult) => {
-    const docs = REGIONS.map(region => ({
-        apiId: api._id,
-        status: baseResult.status,
-        statusCode: baseResult.statusCode,
-        responseTime: baseResult.responseTime + region.latencyOffset,
-        reason: baseResult.reason,
-        assertionResults: baseResult.assertionResults,
-        region: region.id,
-    }));
-    await PingLog.insertMany(docs, { ordered: false });
-};
-
-// -------------------------------------------------------------------
 // Main process: ping + incidents + socket update
 // -------------------------------------------------------------------
 const processPing = async (api, io) => {
     // Run the real HTTP ping once — measure only the network call
     const result = await pingAPI(api);
 
-    // Fire-and-forget: bulk insert 5 region logs + save API status in parallel
+    // Update API status and last check time
     const oldStatus = api.status;
     api.status = result.status;
     api.lastChecked = new Date();
 
+    // Create a single log entry for the real ping
+    const log = new PingLog({
+        apiId: api._id,
+        status: result.status,
+        statusCode: result.statusCode,
+        responseTime: result.responseTime,
+        reason: result.reason,
+        assertionResults: result.assertionResults,
+        region: 'us-east' // Default primary region
+    });
+
     await Promise.all([
-        saveRegionalLogs(api, result),
+        log.save(),
         api.save(),
     ]);
 

@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/context/ToastContext';
 
 const INPUT = 'w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none transition-all duration-200 placeholder-white/20 focus:bg-white/[0.06] focus:border-pink-500/60 focus:ring-2 focus:ring-pink-500/15';
-const SELECT = 'w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none transition-all duration-200 focus:bg-white/[0.06] focus:border-pink-500/60 appearance-none pr-9 cursor-pointer';
+const SELECT = 'w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none transition-all duration-200 focus:bg-white/[0.06] focus:border-pink-500/60 focus:ring-2 focus:ring-pink-500/15 appearance-none pr-9 cursor-pointer';
 const LABEL = 'block text-[10px] font-black uppercase tracking-[0.12em] text-gray-400 mb-1.5 ml-0.5';
 
 const SELECT_ARROW = {
@@ -270,7 +270,7 @@ export default function HeartbeatsPage() {
                                                 <div>
                                                     <label className={LABEL}>Time Unit</label>
                                                     <select value={form.expectedEveryUnit} onChange={e => setForm({ ...form, expectedEveryUnit: e.target.value })}
-                                                        className={SELECT} style={SELECT_ARROW}>
+                                                        className={SELECT} style={SELECT_ARROW} suppressHydrationWarning>
                                                         <option value="minutes" className="bg-[#0a0a0a]">Minutes</option>
                                                         <option value="hours" className="bg-[#0a0a0a]">Hours</option>
                                                         <option value="days" className="bg-[#0a0a0a]">Days</option>
@@ -287,7 +287,7 @@ export default function HeartbeatsPage() {
                                                 <div id="tour-hb-timezone" className="col-span-1">
                                                     <label className={LABEL}>Timezone</label>
                                                     <select value={form.timezone} onChange={e => setForm({ ...form, timezone: e.target.value })}
-                                                        className={SELECT} style={SELECT_ARROW}>
+                                                        className={SELECT} style={SELECT_ARROW} suppressHydrationWarning>
                                                         <option value="UTC" className="bg-[#0a0a0a]">UTC</option>
                                                         <option value="Asia/Kolkata" className="bg-[#0a0a0a]">Asia/Kolkata (IST)</option>
                                                         <option value="America/New_York" className="bg-[#0a0a0a]">America/New_York</option>
@@ -309,7 +309,7 @@ export default function HeartbeatsPage() {
                                             <div>
                                                 <label className={LABEL}>Duration Unit</label>
                                                 <select value={form.maxDurationUnit} onChange={e => setForm({ ...form, maxDurationUnit: e.target.value })}
-                                                    className={SELECT} style={SELECT_ARROW}>
+                                                    className={SELECT} style={SELECT_ARROW} suppressHydrationWarning>
                                                     <option value="seconds" className="bg-[#0a0a0a]">Seconds</option>
                                                     <option value="minutes" className="bg-[#0a0a0a]">Minutes</option>
                                                     <option value="hours" className="bg-[#0a0a0a]">Hours</option>

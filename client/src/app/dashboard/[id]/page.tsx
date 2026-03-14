@@ -9,11 +9,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft, Activity, Clock, Globe, Shield,
     AlertCircle, Database, Trash2, Play, Pause,
-    CheckCircle2, XCircle, Globe2, Pencil, X, Plus, Save
+    CheckCircle2, XCircle, Pencil, X, Plus, Save, BarChart3
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import { format, formatDistanceToNow } from 'date-fns';
+import AdvancedAnalytics from '@/components/dashboard/AdvancedAnalytics';
 
 // ─── Styles (inline so Tailwind v4 can't drop them) ──────────────────────────
 const INPUT = 'w-full px-4 py-3 rounded-[14px] text-white text-sm outline-none transition-all duration-200 placeholder-white/20';
@@ -29,19 +30,7 @@ const METHOD_COLORS: Record<string, string> = {
     GET: '#10b981', POST: '#3b82f6', PUT: '#f59e0b', PATCH: '#8b5cf6', DELETE: '#ef4444', HEAD: '#6b7280',
 };
 
-// ─── Region helpers ───────────────────────────────────────────────────────────
-const REGION_COLORS = {
-    good: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-    medium: { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-    bad: { text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
-    none: { text: 'text-gray-500', bg: 'bg-white/[0.02]', border: 'border-white/[0.05]' },
-};
-function getRegionColor(ms: number | null) {
-    if (ms === null) return REGION_COLORS.none;
-    if (ms < 200) return REGION_COLORS.good;
-    if (ms < 400) return REGION_COLORS.medium;
-    return REGION_COLORS.bad;
-}
+
 
 // ─── KV Pair editor ───────────────────────────────────────────────────────────
 interface KVPair { key: string; value: string; }
@@ -90,7 +79,6 @@ export default function DetailPage() {
     const router = useRouter();
     const { toggleApi, deleteApi } = useCache();
     const [data, setData] = useState<any>(null);
-    const [regionalStats, setRegionalStats] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const { showToast } = useToast();
     const { confirm } = useConfirm();
@@ -102,12 +90,30 @@ export default function DetailPage() {
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [editTab, setEditTab] = useState<'basic' | 'advanced'>('basic');
 
+    // Advanced Stats state
+    const [advancedStats, setAdvancedStats] = useState<any>(null);
+    const [loadingAdvanced, setLoadingAdvanced] = useState(true);
+
     useEffect(() => {
         if (params.id && user?.token) {
             fetchDetails();
-            fetchRegionalStats();
+            fetchAdvancedStats();
         }
     }, [params.id, user?.token]);
+
+    const fetchAdvancedStats = async () => {
+        try {
+            setLoadingAdvanced(true);
+            const statsUrl = `/apis/${params.id}/advanced-stats`;
+            console.log(`[DEBUG] Fetching advanced stats from: ${statsUrl} (Full: ${api.defaults.baseURL}${statsUrl})`);
+            const response = await api.get(statsUrl);
+            setAdvancedStats(response.data);
+        } catch (error) {
+            console.error('Failed to fetch advanced stats', error);
+        } finally {
+            setLoadingAdvanced(false);
+        }
+    };
 
     const fetchDetails = async () => {
         try {
@@ -120,14 +126,7 @@ export default function DetailPage() {
         }
     };
 
-    const fetchRegionalStats = async () => {
-        try {
-            const response = await api.get(`/apis/${params.id}/regional-stats`);
-            setRegionalStats(response.data);
-        } catch (error) {
-            console.error('Failed to fetch regional stats', error);
-        }
-    };
+
 
     const openEdit = () => {
         const m = data.api;
@@ -304,6 +303,15 @@ export default function DetailPage() {
                     ))}
                 </motion.div>
 
+                {/* ─── Advanced Analytics ────────────────────────────────────── */}
+                <motion.div id="tour-api-advanced" variants={itemVariants} className="mb-12">
+                    <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 tracking-tight">
+                        <BarChart3 className="w-6 h-6 text-blue-500" /> Advanced Analytics
+                        <span className="text-sm font-medium text-gray-500 ml-auto underline decoration-blue-500/30 underline-offset-4">Last 24 Hours</span>
+                    </h2>
+                    <AdvancedAnalytics stats={advancedStats} loading={loadingAdvanced} />
+                </motion.div>
+
                 {/* ─── Assertion Results ────────────────────────────────────── */}
                 {monitor.assertions && monitor.assertions.length > 0 && (
                     <motion.div id="tour-api-assertions" variants={itemVariants} className="mb-12">
@@ -349,49 +357,7 @@ export default function DetailPage() {
                     </motion.div>
                 )}
 
-                {/* ─── Geographic Performance ──────────────────────────────── */}
-                <motion.div id="tour-api-geo" variants={itemVariants} className="mb-12">
-                    <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 tracking-tight">
-                        <Globe2 className="w-6 h-6 text-blue-500" /> Geographic Performance
-                        <span className="text-sm font-medium text-gray-500 ml-auto">Last 48 hours · Simulated</span>
-                    </h2>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        {regionalStats.length === 0
-                            ? Array.from({ length: 5 }).map((_, i) => (
-                                <div key={i} className="glass-card p-5 border border-white/[0.05] animate-pulse h-32" />
-                            ))
-                            : regionalStats.map((region) => {
-                                const colors = getRegionColor(region.avgResponseTime);
-                                return (
-                                    <motion.div key={region.id} whileHover={{ y: -4, scale: 1.03 }}
-                                        className={`relative p-5 rounded-2xl border ${colors.bg} ${colors.border} transition-all duration-300 cursor-default`}>
-                                        <div className="text-2xl mb-3">{region.flag}</div>
-                                        <p className="text-xs text-gray-400 font-bold mb-1">{region.name}</p>
-                                        <div className={`text-2xl font-black ${colors.text}`}>
-                                            {region.avgResponseTime !== null ? `${region.avgResponseTime}ms` : '—'}
-                                        </div>
-                                        <div className="flex items-center gap-1.5 mt-2">
-                                            <div className={`w-1.5 h-1.5 rounded-full ${region.uptime >= 99 ? 'bg-emerald-500' : region.uptime >= 95 ? 'bg-amber-500' : 'bg-red-500'}`} />
-                                            <span className="text-[10px] text-gray-500 font-bold">
-                                                {region.totalPings > 0 ? `${region.uptime}% up` : 'No data'}
-                                            </span>
-                                        </div>
-                                        {region.avgResponseTime !== null && (
-                                            <div className="mt-3 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${Math.min(100, (region.avgResponseTime / 600) * 100)}%` }}
-                                                    transition={{ delay: 0.3, duration: 0.8, ease: 'easeOut' }}
-                                                    className="h-full rounded-full"
-                                                    style={{ background: region.avgResponseTime < 200 ? '#10b981' : region.avgResponseTime < 400 ? '#f59e0b' : '#ef4444' }}
-                                                />
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                );
-                            })}
-                    </div>
-                </motion.div>
+
 
                 {/* ─── Incidents Table ─────────────────────────────────────── */}
                 <motion.div id="tour-api-incidents" variants={itemVariants} className="mb-12">
@@ -588,7 +554,7 @@ export default function DetailPage() {
                                                     <label className={LABEL}>Interval (min)</label>
                                                     <select value={editForm.interval} style={{ ...SELECT_ARROW, ...INPUT_STYLE }}
                                                         onChange={(e) => setEditForm({ ...editForm, interval: parseInt(e.target.value) })}
-                                                        className={INPUT + ' appearance-none pr-9 cursor-pointer'}>
+                                                        className={INPUT + ' appearance-none pr-9 cursor-pointer focus:ring-2 focus:ring-blue-500/15'}>
                                                         <option value={1} className="bg-[#0d0d0d]">1 min</option>
                                                         <option value={5} className="bg-[#0d0d0d]">5 min</option>
                                                         <option value={15} className="bg-[#0d0d0d]">15 min</option>

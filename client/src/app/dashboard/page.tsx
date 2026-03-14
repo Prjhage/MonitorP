@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const INPUT =
     'w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none transition-all duration-200 placeholder-white/20 focus:bg-white/[0.06] focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/15';
 const SELECT =
-    'w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none transition-all duration-200 focus:bg-white/[0.06] focus:border-blue-500/60 appearance-none pr-9 cursor-pointer';
+    'w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none transition-all duration-200 focus:bg-white/[0.06] focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/15 appearance-none pr-9 cursor-pointer';
 const LABEL =
     'block text-[10px] font-black uppercase tracking-[0.12em] text-gray-400 mb-1.5 ml-0.5';
 const TEXTAREA =
@@ -118,11 +118,11 @@ function AssertionEditor({ assertions, onChange }: { assertions: Assertion[]; on
                     <div key={i} className="p-4 bg-white/[0.02] border border-white/[0.07] rounded-2xl space-y-2.5">
                         <div className="flex gap-2">
                             <select value={a.type} onChange={(e) => update(i, 'type', e.target.value)}
-                                className={SELECT + ' flex-1'} style={SELECT_ARROW}>
+                                className={SELECT + ' flex-1'} style={SELECT_ARROW} suppressHydrationWarning>
                                 {ASSERTION_TYPES.map(t => <option key={t.value} value={t.value} className="bg-[#0d0d0d]">{t.label}</option>)}
                             </select>
                             <select value={a.operator} onChange={(e) => update(i, 'operator', e.target.value)}
-                                className={SELECT + ' flex-1'} style={SELECT_ARROW}>
+                                className={SELECT + ' flex-1'} style={SELECT_ARROW} suppressHydrationWarning>
                                 {(OPERATORS[a.type] || []).map(o => <option key={o.value} value={o.value} className="bg-[#0d0d0d]">{o.label}</option>)}
                             </select>
                             <button type="button" onClick={() => onChange(assertions.filter((_, idx) => idx !== i))}
@@ -361,7 +361,7 @@ export default function DashboardPage() {
                                                         <label className={LABEL}>HTTP Method</label>
                                                         <select value={newApi.method} style={{ ...SELECT_ARROW }}
                                                             onChange={(e) => setNewApi({ ...newApi, method: e.target.value })}
-                                                            className={SELECT}>
+                                                            className={SELECT} suppressHydrationWarning>
                                                             {['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'].map(m => (
                                                                 <option key={m} value={m} className="bg-[#0d0d0d]">{m}</option>
                                                             ))}
@@ -380,7 +380,7 @@ export default function DashboardPage() {
                                                         <label className={LABEL}>Check Interval</label>
                                                         <select value={newApi.interval} style={{ ...SELECT_ARROW }}
                                                             onChange={(e) => setNewApi({ ...newApi, interval: parseInt(e.target.value) })}
-                                                            className={SELECT}>
+                                                            className={SELECT} suppressHydrationWarning>
                                                             <option value={60} className="bg-[#0d0d0d]">Every 1 Minute</option>
                                                             <option value={300} className="bg-[#0d0d0d]">Every 5 Minutes</option>
                                                             <option value={900} className="bg-[#0d0d0d]">Every 15 Minutes</option>

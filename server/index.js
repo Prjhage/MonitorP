@@ -10,6 +10,8 @@ const apiRoutes = require('./routes/api');
 const publicRoutes = require('./routes/public');
 const heartbeatRoutes = require('./routes/heartbeat');
 const pingRoutes = require('./routes/ping');
+const sslRoutes = require('./routes/ssl');
+const apiKeyRoutes = require('./routes/apiKey');
 
 const app = express();
 const server = http.createServer(app);
@@ -45,7 +47,9 @@ app.use(express.json());
 
 // Request logging middleware
 app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    const log = `[HTTP] ${req.method} ${req.url} - ${new Date().toISOString()}\n`;
+    console.log(log);
+    require('fs').appendFileSync('request_debug.log', log);
     next();
 });
 
@@ -55,6 +59,12 @@ app.use('/api/apis', apiRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/heartbeats', heartbeatRoutes);
 app.use('/ping', pingRoutes);
+app.use('/api/ssl', sslRoutes);
+app.use('/api/api-keys', apiKeyRoutes);
+
+app.get('/test-route', (req, res) => {
+    res.json({ message: 'Routing is working' });
+});
 
 app.get('/', (req, res) => {
     res.send('MonitorP API Server is running...');
@@ -84,6 +94,8 @@ io.on('connection', (socket) => {
 
 const { startMonitoring } = require('./engine/pinger');
 const { startHeartbeatChecker } = require('./engine/heartbeatChecker');
+const { startSslEngine } = require('./engine/sslEngine');
+const { startApiKeyChecker } = require('./engine/apiKeyChecker');
 
 // Start Server
 const PORT = process.env.PORT || 5000;
@@ -92,6 +104,8 @@ server.listen(PORT, () => {
     // Start the monitoring engine
     startMonitoring(io);
     startHeartbeatChecker(io);
+    startSslEngine(io);
+    startApiKeyChecker(io);
 });
 
 

@@ -6,6 +6,27 @@ const Incident = require('../models/Incident');
 const REGIONS = require('../config/regions');
 const { protect } = require('../middleware/auth');
 
+// @desc    Test route to verify apiRoutes are reachable
+// @route   GET /api/apis/test-ping
+router.get('/test-ping', (req, res) => {
+    res.json({ message: 'API Routes are reachable', timestamp: new Date() });
+});
+
+// @desc    Diagnostic route to check API existence
+// @route   GET /api/apis/diag/:id
+router.get('/diag/:id', async (req, res) => {
+    try {
+        const api = await API.findById(req.params.id).lean();
+        res.json({
+            found: !!api,
+            id: req.params.id,
+            api: api ? { name: api.name, userId: api.userId } : null
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // @desc    Get all active APIs for logged in user
 // @route   GET /api/apis
 router.get('/', protect, async (req, res) => {
@@ -45,6 +66,21 @@ router.post('/', protect, async (req, res) => {
     }
 });
 
+// @desc    Get all incidents for current user
+// @route   GET /api/apis/incidents/all
+// NOTE: This MUST be before any /:id routes to avoid Express treating "incidents" as an id
+router.get('/incidents/all', protect, async (req, res) => {
+    try {
+        const incidents = await Incident.find({ userId: req.user._id })
+            .populate('apiId', 'name')
+            .sort({ startTime: -1 });
+        res.json(incidents);
+    } catch (error) {
+        console.error('All Incidents Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // @desc    Update API config (name, url, method, headers, body, assertions, etc.)
 // @route   PATCH /api/apis/:id
 router.patch('/:id', protect, async (req, res) => {
@@ -66,6 +102,99 @@ router.patch('/:id', protect, async (req, res) => {
     } catch (error) {
         console.error('API Update Error:', error);
         res.status(400).json({ message: error.message });
+    }
+});
+
+// @desc    Get advanced performance analytics (P50, P95, P99, Error Rate, Throughput, Apdex)
+// @route   GET /api/apis/:id/advanced-stats
+router.get('/:id/advanced-stats', protect, async (req, res) => {
+    console.log(`[DEBUG] Advanced Stats requested for ID: ${req.params.id}`);
+    try {
+        const api = await API.findById(req.params.id).lean();
+        if (!api || api.userId.toString() !== req.user._id.toString()) {
+            console.log(`[DEBUG] API not found or mismatch: ${req.params.id}`);
+            return res.status(404).json({ message: 'API not found' });
+        }
+
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        
+        // Fetch all logs from the last 24h
+        const logs = await PingLog.find({
+            apiId: api._id,
+            checkedAt: { $gte: twentyFourHoursAgo }
+        }).sort({ checkedAt: 1 }).lean();
+
+        if (logs.length === 0) {
+            return res.json({
+                p50: 0, p95: 0, p99: 0,
+                errorRate: 0,
+                throughput: 0,
+                apdex: 1,
+                totalRequests: 0,
+                status: 'no_data'
+            });
+        }
+
+        const latencies = logs
+            .map(l => l.responseTime)
+            .filter(t => t !== null && t !== undefined)
+            .sort((a, b) => a - b);
+
+        const calculatePercentile = (arr, p) => {
+            if (arr.length === 0) return 0;
+            const index = Math.ceil((p / 100) * arr.length) - 1;
+            return arr[index];
+        };
+
+        const p50 = calculatePercentile(latencies, 50);
+        const p95 = calculatePercentile(latencies, 95);
+        const p99 = calculatePercentile(latencies, 99);
+
+        // Error Rate
+        const totalPings = logs.length;
+        const failedPings = logs.filter(l => l.status === 'DOWN').length;
+        const errorRate = (failedPings / totalPings) * 100;
+
+        // Throughput (Requests per minute/second)
+        // Since we check at intervals, throughput is basically (checks / time_range)
+        // Let's use Requests Per Hour or minute if it's too low for RPS
+        const throughput = totalPings / 24; // Avg requests per hour
+
+        // Apdex Score
+        // T = 500ms (threshold)
+        // Satisfied: responseTime <= T
+        // Tolerating: T < responseTime <= 4T
+        // Frustrated: responseTime > 4T
+        const T = 500;
+        let satisfied = 0;
+        let tolerating = 0;
+        
+        logs.forEach(l => {
+            if (l.status === 'UP') {
+                if (l.responseTime <= T) {
+                    satisfied++;
+                } else if (l.responseTime <= 4 * T) {
+                    tolerating++;
+                }
+            }
+        });
+
+        const apdex = (satisfied + (tolerating / 2)) / totalPings;
+
+        res.json({
+            p50,
+            p95,
+            p99,
+            errorRate: parseFloat(errorRate.toFixed(2)),
+            throughput: parseFloat(throughput.toFixed(2)),
+            apdex: parseFloat(apdex.toFixed(2)),
+            totalRequests: totalPings,
+            status: 'success'
+        });
+
+    } catch (error) {
+        console.error('Advanced Stats Error:', error);
+        res.status(500).json({ message: error.message });
     }
 });
 
@@ -108,70 +237,6 @@ router.get('/:id/stats', protect, async (req, res) => {
             latestAssertionResults: latestLog?.assertionResults || [],
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// @desc    Get regional performance stats
-// @route   GET /api/apis/:id/regional-stats
-router.get('/:id/regional-stats', protect, async (req, res) => {
-    try {
-        const api = await API.findById(req.params.id);
-        if (!api || api.userId.toString() !== req.user._id.toString()) {
-            return res.status(404).json({ message: 'API not found' });
-        }
-
-        const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
-
-        // Aggregate average latency + uptime per region
-        const aggregate = await PingLog.aggregate([
-            {
-                $match: {
-                    apiId: api._id,
-                    checkedAt: { $gte: fortyEightHoursAgo }
-                }
-            },
-            {
-                $group: {
-                    _id: '$region',
-                    avgResponseTime: { $avg: '$responseTime' },
-                    totalPings: { $sum: 1 },
-                    upPings: {
-                        $sum: { $cond: [{ $eq: ['$status', 'UP'] }, 1, 0] }
-                    },
-                }
-            }
-        ]);
-
-        // Merge with region metadata
-        const regionalStats = REGIONS.map(region => {
-            const data = aggregate.find(a => a._id === region.id);
-            const uptime = data ? (data.upPings / data.totalPings) * 100 : 100;
-            return {
-                ...region,
-                avgResponseTime: data ? Math.round(data.avgResponseTime) : null,
-                uptime: Math.round(uptime * 10) / 10,
-                totalPings: data?.totalPings || 0,
-            };
-        });
-
-        res.json(regionalStats);
-    } catch (error) {
-        console.error('Regional Stats Error:', error);
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// @desc    Get all incidents for current user
-// @route   GET /api/apis/incidents/all
-router.get('/incidents/all', protect, async (req, res) => {
-    try {
-        const incidents = await Incident.find({ userId: req.user._id })
-            .populate('apiId', 'name')
-            .sort({ startTime: -1 });
-        res.json(incidents);
-    } catch (error) {
-        console.error('All Incidents Error:', error);
         res.status(500).json({ message: error.message });
     }
 });

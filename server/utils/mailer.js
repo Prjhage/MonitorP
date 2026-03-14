@@ -82,4 +82,47 @@ const sendHeartbeatRecoveryEmail = async (user, heartbeat, incident) => {
   return sendEmail({ to: heartbeat.alertEmail || user.email, subject, html });
 };
 
-module.exports = { sendAlertEmail, sendRecoveryEmail, sendHeartbeatAlertEmail, sendHeartbeatRecoveryEmail };
+const sendSslExpiryWarning = async (user, sslMonitor, daysRemaining) => {
+  const urgency = daysRemaining <= 7 ? 'CRITICAL' : daysRemaining <= 15 ? 'URGENT' : 'WARNING';
+  const subject = `🔒 SSL ${urgency}: ${sslMonitor.domain} expires in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`;
+  const color = daysRemaining <= 7 ? '#ef4444' : daysRemaining <= 15 ? '#f59e0b' : '#3b82f6';
+  const html = `
+    <div style="font-family: sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: ${color};">SSL Certificate Expiring Soon</h2>
+      <p>Hello ${user.fullName},</p>
+      <p>The SSL certificate for <strong>${sslMonitor.domain}</strong> will expire in <strong>${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}</strong>.</p>
+      <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+        <tr><td style="padding: 6px 12px; font-weight: bold;">Domain</td><td style="padding: 6px 12px;">${sslMonitor.domain}</td></tr>
+        <tr style="background:#f9f9f9"><td style="padding: 6px 12px; font-weight: bold;">Issuer</td><td style="padding: 6px 12px;">${sslMonitor.issuer || 'Unknown'}</td></tr>
+        <tr><td style="padding: 6px 12px; font-weight: bold;">Expires</td><td style="padding: 6px 12px;">${sslMonitor.validTo ? new Date(sslMonitor.validTo).toLocaleDateString() : 'Unknown'}</td></tr>
+        <tr style="background:#f9f9f9"><td style="padding: 6px 12px; font-weight: bold;">Days Left</td><td style="padding: 6px 12px; color: ${color}; font-weight: bold;">${daysRemaining}</td></tr>
+      </table>
+      <p>Please renew your SSL certificate immediately to avoid security warnings on your site.</p>
+      <hr />
+      <p>Check your MonitorP dashboard for full details.</p>
+    </div>
+  `;
+  return sendEmail({ to: sslMonitor.alertEmail || user.email, subject, html });
+};
+
+const sendSslExpiredAlert = async (user, sslMonitor) => {
+  const subject = `🚨 SSL EXPIRED: ${sslMonitor.domain} certificate has expired!`;
+  const html = `
+    <div style="font-family: sans-serif; padding: 20px; color: #333;">
+      <h2 style="color: #ef4444;">SSL Certificate EXPIRED</h2>
+      <p>Hello ${user.fullName},</p>
+      <p>The SSL certificate for <strong>${sslMonitor.domain}</strong> has <strong>expired</strong>. Visitors are now seeing a browser security warning.</p>
+      <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+        <tr><td style="padding: 6px 12px; font-weight: bold;">Domain</td><td style="padding: 6px 12px;">${sslMonitor.domain}</td></tr>
+        <tr style="background:#f9f9f9"><td style="padding: 6px 12px; font-weight: bold;">Issuer</td><td style="padding: 6px 12px;">${sslMonitor.issuer || 'Unknown'}</td></tr>
+        <tr><td style="padding: 6px 12px; font-weight: bold;">Expired On</td><td style="padding: 6px 12px; color: #ef4444; font-weight: bold;">${sslMonitor.validTo ? new Date(sslMonitor.validTo).toLocaleDateString() : 'Unknown'}</td></tr>
+      </table>
+      <p style="color: #ef4444; font-weight: bold;">ACTION REQUIRED: Renew this certificate immediately!</p>
+      <hr />
+      <p>Check your MonitorP dashboard for full details.</p>
+    </div>
+  `;
+  return sendEmail({ to: sslMonitor.alertEmail || user.email, subject, html });
+};
+
+module.exports = { sendAlertEmail, sendRecoveryEmail, sendHeartbeatAlertEmail, sendHeartbeatRecoveryEmail, sendSslExpiryWarning, sendSslExpiredAlert };

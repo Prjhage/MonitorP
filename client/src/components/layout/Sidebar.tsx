@@ -4,7 +4,7 @@ import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard, Settings, LogOut, Bell,
-  Activity, ShieldCheck, Home, Heart, Sparkles
+  Activity, ShieldCheck, Home, Heart, Sparkles, Lock, Key
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -20,6 +20,8 @@ export default function Sidebar() {
     { name: 'Home Site', icon: Home, path: '/' },
     { name: 'API Monitoring', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'Heartbeat Monitoring', icon: Heart, path: '/dashboard/heartbeats' },
+    { name: 'SSL Certificates', icon: Lock, path: '/dashboard/ssl' },
+    { name: 'API Key Manager', icon: Key, path: '/dashboard/api-keys' },
     { name: 'Incidents Log', icon: Activity, path: '/dashboard/incidents' },
   ];
 
@@ -198,6 +200,7 @@ export default function Sidebar() {
         <div className="pt-8 pb-4">
           <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4 px-4">Support</div>
           <button
+            suppressHydrationWarning
             disabled={isTourActive}
             onClick={handleStartTour}
             className="w-full group relative p-[1px] rounded-2xl overflow-hidden active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
@@ -232,6 +235,7 @@ export default function Sidebar() {
         </Link>
 
         <button
+          suppressHydrationWarning
           onClick={logout}
           className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 text-gray-400 hover:text-white rounded-2xl text-[13px] font-bold transition-all duration-300 bg-white/[0.02] hover:bg-red-500/10 border border-white/[0.03] hover:border-red-500/20 group"
         >
