@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, ChevronDown, HelpCircle, Activity, Globe, Zap, Bell, ShieldCheck, Heart, ArrowLeft, User } from 'lucide-react';
+import { Shield, ChevronDown, HelpCircle, Activity, Globe, Zap, Bell, ShieldCheck, Heart, ArrowLeft, User, Lock } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 const faqs = [
@@ -33,9 +33,19 @@ const faqs = [
         icon: <Zap className="w-5 h-5 text-purple-500" />
     },
     {
+        question: "How does SSL monitoring work?",
+        answer: "MonitorP automatically tracks your SSL certificates, checking for expiry and configuration health. You'll receive alerts 30, 14, and 7 days before a certificate expires, giving you plenty of time to renew before your users see any security warnings.",
+        icon: <Lock className="w-5 h-5 text-emerald-500" />
+    },
+    {
+        question: "What is API Key Protection?",
+        answer: "Our security engine proactively scans public GitHub repositories for leaked credentials or API keys associated with your services. If a leak is detected, we alert you instantly, allowing you to rotate keys before they can be exploited by malicious actors.",
+        icon: <Shield className="w-5 h-5 text-purple-500" />
+    },
+    {
         question: "How secure is my data?",
         answer: "Security is our top priority. All sensitive data like custom headers or auth tokens are encrypted at rest. Our monitoring infrastructure is isolated, and we never touch your actual production data—only the endpoints you tell us to watch.",
-        icon: <Shield className="w-5 h-5 text-indigo-500" />
+        icon: <ShieldCheck className="w-5 h-5 text-indigo-500" />
     }
 ];
 

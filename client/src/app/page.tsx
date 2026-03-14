@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Shield, Activity, Bell, BarChart3, Globe, ArrowRight, ArrowUpRight, CheckCircle2, Zap, User, Code2, CheckSquare, Heart } from 'lucide-react';
+import { Shield, Activity, Bell, BarChart3, Globe, ArrowRight, ArrowUpRight, CheckCircle2, Zap, User, Code2, CheckSquare, Heart, Lock } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function LandingPage() {
@@ -118,7 +118,7 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-sm font-medium mb-8"
             >
               <Zap className="w-4 h-4 fill-current" />
-              <span>Introducing Heartbeat & API Monitoring</span>
+              <span>Introducing API, SSL & Heartbeat Monitoring</span>
             </motion.div>
 
             <motion.h1
@@ -194,16 +194,18 @@ export default function LandingPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                     {[
                       { name: 'Payment Gateway', status: 'UP', color: '#10b981', latency: '42ms', type: 'API' },
-                      { name: 'Nightly Backup', status: 'UP', color: '#10b981', latency: 'Scheduled', type: 'HB' },
-                      { name: 'Auth Service', status: 'UP', color: '#10b981', latency: '18ms', type: 'API' }
+                      { name: 'SSL Certificate', status: 'SAFE', color: '#10b981', latency: '24 Days', type: 'SSL' },
+                      { name: 'Nightly Backup', status: 'UP', color: '#10b981', latency: 'Scheduled', type: 'HB' }
                     ].map((mock, i) => (
                       <div key={mock.name} className="bg-[#0c0c0e] border border-white/5 rounded-[24px] p-8 relative overflow-hidden group/card hover:border-white/10 transition-all">
                         <div className="flex justify-between items-start mb-10">
                           <div className="flex items-center gap-5">
                             <div className="relative w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center overflow-hidden">
-                              <div className={`absolute inset-0 blur-xl opacity-20 ${mock.type === 'HB' ? 'bg-pink-500' : 'bg-blue-500'}`} />
+                              <div className={`absolute inset-0 blur-xl opacity-20 ${mock.type === 'HB' ? 'bg-pink-500' : mock.type === 'SSL' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
                               {mock.type === 'HB' ? (
                                 <Heart className="w-6 h-6 text-pink-500 relative z-10" />
+                              ) : mock.type === 'SSL' ? (
+                                <Lock className="w-6 h-6 text-emerald-500 relative z-10" />
                               ) : (
                                 <Activity className="w-6 h-6 text-blue-500 relative z-10" />
                               )}
@@ -216,7 +218,7 @@ export default function LandingPage() {
                               <div className="text-[17px] font-bold text-white tracking-tight">{mock.name}</div>
                               <div className="flex items-center gap-2">
                                 <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-white/5 text-gray-500`}>
-                                  {mock.type === 'HB' ? 'Heartbeat' : 'API Monitor'}
+                                  {mock.type === 'HB' ? 'Heartbeat' : mock.type === 'SSL' ? 'SSL Health' : 'API Monitor'}
                                 </span>
                               </div>
                             </div>
@@ -232,6 +234,11 @@ export default function LandingPage() {
                               <>
                                 <span className="text-xl font-black text-white">{mock.latency.replace('ms', '')}</span>
                                 <span className="text-[10px] font-bold text-gray-600">MS</span>
+                              </>
+                            ) : mock.type === 'SSL' ? (
+                              <>
+                                <span className="text-xl font-black text-white">{mock.latency.replace(' Days', '')}</span>
+                                <span className="text-[10px] font-bold text-gray-600">DAYS</span>
                               </>
                             ) : (
                               <span className="text-xs font-bold text-emerald-500/80 uppercase tracking-widest">Healthy</span>
@@ -251,14 +258,14 @@ export default function LandingPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {[
                         { time: '2s ago', event: 'Ping Received', source: 'Payment Gateway', region: 'US-East', status: 'success' },
-                        { time: '14s ago', event: 'Backup Verified', source: 'Nightly Backup', region: 'EU-West', status: 'success' },
-                        { time: '31s ago', event: 'Latency Spike', source: 'Auth Service', region: 'Asia-South', status: 'warning' },
-                        { time: '1m ago', event: 'Ping Received', source: 'Payment Gateway', region: 'AU-East', status: 'success' }
+                        { time: '14s ago', event: 'SSL Healthy', source: 'Primary Domain', region: 'Cloud', status: 'success' },
+                        { time: '31s ago', event: 'Key Leaked', source: 'GitHub Scanner', region: 'Security', status: 'error' },
+                        { time: '1m ago', event: 'Backup Verified', source: 'Nightly Backup', region: 'EU-West', status: 'success' }
                       ].map((item, i) => (
                         <div key={i} className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4 flex items-center justify-between group/feed hover:bg-white/[0.04] transition-all">
                           <div className="flex items-center gap-4">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${item.status === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-amber-500/10 border-amber-500/20 text-amber-500'}`}>
-                              {item.status === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${item.status === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : item.status === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' : 'bg-amber-500/10 border-amber-500/20 text-amber-500'}`}>
+                              {item.status === 'success' ? <CheckCircle2 className="w-4 h-4" /> : item.status === 'error' ? <Shield className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
                             </div>
                             <div>
                               <div className="text-[13px] font-bold text-white leading-none mb-1">{item.event}</div>
@@ -286,40 +293,40 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                icon: <Code2 className="w-6 h-6" />,
-                title: "Advanced API Testing",
-                desc: "Full support for custom headers, query parameters, and JSON request bodies — just like Postman.",
-                color: "blue"
-              },
-              {
-                icon: <CheckSquare className="w-6 h-6" />,
-                title: "Dynamic Assertions",
-                desc: "Verify status codes, response times, and body content to ensure your API logic is working 100%.",
-                color: "purple"
-              },
-              {
-                icon: <Globe className="w-6 h-6" />,
-                title: "Public Status Pages",
-                desc: "Build customer trust with beautiful, branded status pages that update in real-time.",
-                color: "amber"
-              },
-              {
-                icon: <Bell className="w-6 h-6" />,
-                title: "Instant Incident Alerts",
-                desc: "Get notified via Email the exact second your service becomes degraded or unreachable.",
-                color: "rose"
-              },
-              {
                 icon: <Activity className="w-6 h-6" />,
-                title: "Regional Monitoring",
-                desc: "We verify your services from multiple global regions to catch localized network issues.",
-                color: "indigo"
+                title: "Advanced API Testing",
+                desc: "Full support for custom headers, query parameters, and JSON request bodies — verify status codes and body content.",
+                color: "blue"
               },
               {
                 icon: <Heart className="w-6 h-6" />,
                 title: "Heartbeat Monitoring",
-                desc: "The ultimate 'Dead Man's Switch' for cron jobs and internal tasks. Monitor what pings can't reach.",
+                desc: "The ultimate 'Dead Man's Switch' for cron jobs and internal tasks. Monitor what external pings can't reach.",
                 color: "pink"
+              },
+              {
+                icon: <Lock className="w-6 h-6" />,
+                title: "SSL Security",
+                desc: "Automatic tracking of certificate expiry and SSL health. Get notified before your users see a security warning.",
+                color: "emerald"
+              },
+              {
+                icon: <Shield className="w-6 h-6" />,
+                title: "API Key Protection",
+                desc: "Proactive scanning for leaked API keys on public GitHub. Prevent unauthorized access before damage is done.",
+                color: "purple"
+              },
+              {
+                icon: <BarChart3 className="w-6 h-6" />,
+                title: "Performance Analytics",
+                desc: "Deep insights with P50, P95, and P99 latency tracking, error rate analysis, and user satisfaction scoring.",
+                color: "amber"
+              },
+              {
+                icon: <Globe className="w-6 h-6" />,
+                title: "Public Status Pages",
+                desc: "Build customer trust with beautiful, branded status pages that update in real-time during incidents.",
+                color: "indigo"
               }
             ].map((feature, i) => {
               const colors = {

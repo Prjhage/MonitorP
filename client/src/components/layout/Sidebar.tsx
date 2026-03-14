@@ -167,7 +167,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 space-y-2 relative z-10 w-full overflow-y-auto pr-1">
+      <nav className="flex-1 space-y-2 relative z-10 w-full overflow-y-auto pr-1 no-scrollbar">
         <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4 px-4">Menu</div>
         {navItems.map((item) => {
           const isActive = item.path === '/dashboard'
