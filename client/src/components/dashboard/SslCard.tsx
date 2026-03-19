@@ -15,6 +15,7 @@ interface SslMonitor {
     daysRemaining?: number;
     isChainValid?: boolean;
     lastChecked?: string;
+    lastError?: string;
     isActive: boolean;
 }
 
@@ -173,7 +174,9 @@ export default function SslCard({ monitor, onClick }: SslCardProps) {
                 {/* Error state message */}
                 {monitor.status === 'ERROR' && (
                     <div className="mb-5 p-4 rounded-2xl bg-red-500/5 border border-red-500/15">
-                        <p className="text-[11px] text-red-400/80 font-medium">Could not retrieve certificate. Check domain is accessible on port 443.</p>
+                        <p className="text-[11px] text-red-400/80 font-medium">
+                            {monitor.lastError || 'Could not retrieve certificate. Check domain is accessible on port 443.'}
+                        </p>
                     </div>
                 )}
 

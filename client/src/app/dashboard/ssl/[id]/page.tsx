@@ -182,8 +182,9 @@ export default function SslDetailPage() {
             <motion.div variants={itemVariants} className="glass-card border border-white/[0.06] p-8 mb-8 relative overflow-hidden">
                 <div className="absolute inset-0 pointer-events-none" style={{
                     background: `radial-gradient(ellipse at 80% 50%, ${
-                        monitor.daysRemaining <= 0 ? 'rgba(239,68,68,0.07)' :
-                        monitor.daysRemaining <= 15 ? 'rgba(245,158,11,0.07)' :
+                        monitor.status === 'ERROR' ? 'rgba(239,68,68,0.07)' :
+                        monitor.daysRemaining !== null && monitor.daysRemaining <= 0 ? 'rgba(239,68,68,0.07)' :
+                        monitor.daysRemaining !== null && monitor.daysRemaining <= 15 ? 'rgba(245,158,11,0.07)' :
                         'rgba(13,148,136,0.07)'
                     } 0%, transparent 70%)`
                 }} />
@@ -191,22 +192,44 @@ export default function SslDetailPage() {
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-3">Days Until Expiry</p>
                         <div className={`text-8xl font-black tracking-tighter ${daysColor}`}>
-                            {monitor.daysRemaining !== null
+                            {monitor.status === 'ERROR' ? 'ERR' :
+                             monitor.daysRemaining !== null
                                 ? monitor.daysRemaining <= 0 ? '0' : monitor.daysRemaining
                                 : '—'}
                         </div>
                         <p className="text-gray-500 font-bold mt-2">
-                            {monitor.daysRemaining === null ? 'Not yet checked' :
-                             monitor.daysRemaining <= 0 ? 'Certificate has expired!' :
-                             `Certificate expires ${formatDistanceToNow(new Date(monitor.validTo), { addSuffix: true })}`}
+                             {monitor.status === 'ERROR' ? 'Failed to check certificate' :
+                              monitor.daysRemaining === null ? 'Not yet checked' :
+                              monitor.daysRemaining <= 0 ? 'Certificate has expired!' :
+                              `Certificate expires ${formatDistanceToNow(new Date(monitor.validTo), { addSuffix: true })}`}
                         </p>
                     </div>
                     <div className="text-right">
-                        <Lock className={`w-24 h-24 opacity-10 ${daysColor}`} />
+                        {monitor.status === 'ERROR' ? (
+                             <ShieldAlert className={`w-24 h-24 opacity-10 ${daysColor}`} />
+                        ) : (
+                             <Lock className={`w-24 h-24 opacity-10 ${daysColor}`} />
+                        )}
                     </div>
                 </div>
+                
+                {/* Error Details */}
+                {monitor.status === 'ERROR' && (
+                    <div className="mt-6 p-4 rounded-2xl bg-red-500/5 border border-red-500/15">
+                        <div className="flex items-start gap-3">
+                            <ShieldAlert className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                            <div>
+                                <h4 className="text-red-400 font-bold text-sm mb-1">Check Failed</h4>
+                                <p className="text-red-400/80 text-xs font-medium">
+                                    {monitor.lastError || 'Could not connect to domain on port 443. Check if the server is reachable and HTTPS is configured correctly.'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Progress bar */}
-                {monitor.daysRemaining !== null && monitor.daysRemaining > 0 && (
+                {monitor.status !== 'ERROR' && monitor.daysRemaining !== null && monitor.daysRemaining > 0 && (
                     <div className="mt-6 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
                         <motion.div
                             initial={{ width: 0 }}

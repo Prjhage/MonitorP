@@ -2,7 +2,6 @@ const cron = require('node-cron');
 const ApiKey = require('../models/ApiKey');
 const User = require('../models/User');
 const { sendAlertEmail } = require('../utils/mailer');
-const { runFullSecurityScan } = require('./githubScanner');
 
 const startApiKeyChecker = (io) => {
     // Run daily at midnight
@@ -80,9 +79,6 @@ const startApiKeyChecker = (io) => {
                     }
                 }
             }
-            
-            // Trigger GitHub exposure scan for enabled keys
-            await runFullSecurityScan();
         } catch (error) {
             console.error('API Key Checker Error:', error);
         }

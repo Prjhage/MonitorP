@@ -42,8 +42,6 @@ export default function ApiKeysPage() {
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [scanningId, setScanningId] = useState<string | null>(null);
-    
     const [form, setForm] = useState({
         serviceName: '',
         keyType: 'Secret Key',
@@ -51,8 +49,7 @@ export default function ApiKeysPage() {
         expiryDate: '',
         environment: 'Production',
         alertEmail: user?.email || '',
-        notes: '',
-        githubScanningEnabled: false
+        notes: ''
     });
 
     useEffect(() => {
@@ -88,8 +85,7 @@ export default function ApiKeysPage() {
                 expiryDate: '',
                 environment: 'Production',
                 alertEmail: user?.email || '',
-                notes: '',
-                githubScanningEnabled: false
+                notes: ''
             });
             await fetchKeys();
         } catch (error) {
@@ -116,23 +112,6 @@ export default function ApiKeysPage() {
                 }
             }
         });
-    };
-
-    const handleScan = async (id: string) => {
-        setScanningId(id);
-        try {
-            const { data } = await api.post(`/api-keys/scan/${id}`);
-            if (data.success) {
-                showToast(`Scan complete: Status is ${data.status}`, 'success');
-                await fetchKeys();
-            } else {
-                showToast(data.error || 'Scan failed', 'error');
-            }
-        } catch (error) {
-            showToast('Failed to trigger scan', 'error');
-        } finally {
-            setScanningId(null);
-        }
     };
 
     const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
@@ -195,7 +174,6 @@ export default function ApiKeysPage() {
                                         layout
                                         className="glass-card p-8 border border-white/[0.05] hover:border-white/[0.1] transition-all group relative overflow-hidden"
                                     >
-                                    {/* Expiry Badge */}
                                     <div className={`absolute top-0 right-0 px-4 py-1.5 text-[10px] font-black tracking-widest rounded-bl-2xl ${
                                         isExpired ? 'bg-red-500/20 text-red-400' :
                                         isExpiringSoon ? 'bg-amber-500/20 text-amber-400' :
@@ -203,12 +181,6 @@ export default function ApiKeysPage() {
                                     }`}>
                                         {key.status}
                                     </div>
-
-                                    {key.githubScanningEnabled && key.githubExposureStatus === 'EXPOSED' && (
-                                        <div className="absolute top-8 right-0 px-3 py-1 bg-red-600 text-[9px] font-black tracking-tighter text-white rounded-l-lg animate-pulse z-10">
-                                            ⚠️ EXPOSED ON GITHUB
-                                        </div>
-                                    )}
 
                                     <div className="flex items-center gap-4 mb-6">
                                         <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center">
@@ -247,20 +219,6 @@ export default function ApiKeysPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1">
-                                                {key.githubScanningEnabled && (
-                                                    <button 
-                                                        onClick={() => handleScan(key._id)}
-                                                        disabled={scanningId === key._id}
-                                                        className="p-2.5 rounded-xl text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all border border-transparent hover:border-blue-500/20 disabled:opacity-50"
-                                                        title="Scan GitHub for exposure"
-                                                    >
-                                                        {scanningId === key._id ? (
-                                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                                        ) : (
-                                                            <Search className="w-4 h-4" />
-                                                        )}
-                                                    </button>
-                                                )}
                                                 <button 
                                                     onClick={() => handleDelete(key._id)}
                                                     className="p-2.5 rounded-xl text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
@@ -414,32 +372,6 @@ export default function ApiKeysPage() {
                                             className={INPUT + ' pl-12 pt-3 resize-none'}
                                         />
                                     </div>
-                                </div>
-
-                                <div>
-                                    <label className={LABEL}>Security Scanning</label>
-                                    <button 
-                                        type="button"
-                                        onClick={() => setForm({ ...form, githubScanningEnabled: !form.githubScanningEnabled })}
-                                        className={`w-full p-4 rounded-2xl border transition-all flex items-center justify-between group ${
-                                            form.githubScanningEnabled 
-                                                ? 'bg-blue-500/10 border-blue-500/40 text-blue-400' 
-                                                : 'bg-white/[0.03] border-white/[0.08] text-gray-500 hover:border-white/20'
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg ${form.githubScanningEnabled ? 'bg-blue-500/20' : 'bg-white/5'}`}>
-                                                <ShieldAlert className="w-4 h-4" />
-                                            </div>
-                                            <div className="text-left">
-                                                <p className="text-sm font-bold">GitHub Exposure Scanning</p>
-                                                <p className="text-[10px] opacity-60">Search public repositories for this key signature</p>
-                                            </div>
-                                        </div>
-                                        <div className={`w-10 h-5 rounded-full relative transition-colors ${form.githubScanningEnabled ? 'bg-blue-500' : 'bg-gray-700'}`}>
-                                            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${form.githubScanningEnabled ? 'right-1' : 'left-1'}`} />
-                                        </div>
-                                    </button>
                                 </div>
 
                                 <div className="flex gap-4 pt-4">

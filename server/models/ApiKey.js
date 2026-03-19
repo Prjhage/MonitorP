@@ -44,15 +44,6 @@ const apiKeySchema = new mongoose.Schema({
     },
     notes: {
         type: String,
-    },
-    githubScanningEnabled: {
-        type: Boolean,
-        default: false,
-    },
-    githubExposureStatus: {
-        type: String,
-        enum: ['SAFE', 'EXPOSED', 'UNKNOWN'],
-        default: 'SAFE',
     }
 }, { timestamps: true });
 
