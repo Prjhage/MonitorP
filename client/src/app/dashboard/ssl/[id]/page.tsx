@@ -158,7 +158,7 @@ export default function SslDetailPage() {
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap justify-end">
-                    <button onClick={handleRecheck} disabled={rechecking}
+                    <button id="tour-ssl-recheck" onClick={handleRecheck} disabled={rechecking}
                         className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all border text-teal-400 border-teal-500/20 hover:bg-teal-500/10 disabled:opacity-50">
                         <RefreshCw className={`w-4 h-4 ${rechecking ? 'animate-spin' : ''}`} />
                         {rechecking ? 'Checking...' : 'Re-check'}
@@ -179,7 +179,7 @@ export default function SslDetailPage() {
             </motion.header>
 
             {/* ─── Days remaining hero ───────────────────────────────────── */}
-            <motion.div variants={itemVariants} className="glass-card border border-white/[0.06] p-8 mb-8 relative overflow-hidden">
+            <motion.div id="tour-ssl-days" variants={itemVariants} className="glass-card border border-white/[0.06] p-8 mb-8 relative overflow-hidden">
                 <div className="absolute inset-0 pointer-events-none" style={{
                     background: `radial-gradient(ellipse at 80% 50%, ${
                         monitor.status === 'ERROR' ? 'rgba(239,68,68,0.07)' :
@@ -247,7 +247,7 @@ export default function SslDetailPage() {
             </motion.div>
 
             {/* ─── Cert details grid ─────────────────────────────────────── */}
-            <motion.div variants={itemVariants} className="grid grid-cols-2 gap-6 mb-8">
+            <motion.div id="tour-ssl-details" variants={itemVariants} className="grid grid-cols-2 gap-6 mb-8">
                 {[
                     { label: 'Issuer', value: monitor.issuer || '—', icon: ShieldCheck, color: 'text-teal-400' },
                     { label: 'Organisation', value: monitor.issuerOrg || '—', icon: Globe, color: 'text-blue-400' },
@@ -313,7 +313,7 @@ export default function SslDetailPage() {
             </motion.div>
 
             {/* ─── Alert schedule ────────────────────────────────────────── */}
-            <motion.div variants={itemVariants} className="glass-card border border-white/[0.05] p-6">
+            <motion.div id="tour-ssl-alerts" variants={itemVariants} className="glass-card border border-white/[0.05] p-6">
                 <h2 className="text-lg font-black text-white mb-5 flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-amber-400" /> Alert Schedule
                 </h2>

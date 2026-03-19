@@ -130,13 +130,13 @@ export default function ApiKeysPage() {
                         Centralize tracking for all your external service secrets. We'll alert you before they expire to prevent production downtime.
                     </p>
                 </div>
-                <button onClick={() => setIsAdding(true)} className="premium-button btn-glow-blue flex items-center gap-2 px-6">
+                <button id="tour-add-key" onClick={() => setIsAdding(true)} className="premium-button btn-glow-blue flex items-center gap-2 px-6">
                     <Plus className="w-5 h-5" /> Track New Key
                 </button>
             </motion.header>
 
             {/* ─── Keys Grid ───────────────────────────────────────────── */}
-            <div id="keys-grid-container" className="mb-10 min-h-[400px]">
+            <div id="tour-keys-grid" className="mb-10 min-h-[400px]">
                 <AnimatePresence mode="wait">
                     {loading ? (
                         <motion.div 

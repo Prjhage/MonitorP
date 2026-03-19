@@ -31,6 +31,7 @@ export default function Sidebar() {
     // Check for open modals FIRST
     const apiModalOpen = !!document.getElementById('tour-form-name');
     const hbModalOpen = !!document.getElementById('tour-hb-form-name');
+    const sslModalOpen = !!document.getElementById('tour-ssl-form-name');
 
     if (apiModalOpen) {
       steps = [
@@ -109,6 +110,13 @@ export default function Sidebar() {
       steps.push({ target: '#tour-hb-grace', title: 'Grace Period', content: 'The "Safety Buffer". We wait this many extra minutes before sounding the alarm, preventing false alerts from network lag.' });
       steps.push({ target: '#tour-hb-email', title: 'Incident Notification', content: 'Where should we send the alert if your job fails or goes silent? Multi-recipient support coming soon.' });
       steps.push({ target: '#tour-hb-form-submit', title: 'Go Live', content: 'Activate the monitor to get your unique Ping URL. You will then need to add a simple CURL call to your script.' });
+    } else if (sslModalOpen) {
+      steps = [
+        { target: '#tour-ssl-form-name', title: 'Friendly Name', content: 'Give your SSL monitor an easy-to-read identity.' },
+        { target: '#tour-ssl-form-domain', title: 'Domain Address', content: 'Enter the bare domain (e.g., mysite.com). Do not include https:// or any trailing paths.' },
+        { target: '#tour-ssl-form-email', title: 'Expiry Alerts', content: 'We will proactively email this address when your certificate is approaching expiration.' },
+        { target: '#tour-ssl-form-submit', title: 'Begin Tracking', content: 'Add the monitor. We will immediately fetch and validate the certificate chain.' },
+      ];
     } else if (pathname === '/dashboard') {
       steps = [
         { target: '#tour-add-monitor', title: 'Add New Monitor', content: 'Click here to start monitoring a new API endpoint. You can configure headers, body, and custom assertions.' },
@@ -130,7 +138,25 @@ export default function Sidebar() {
         { target: '#tour-hb-incidents-sidebar', title: 'Failure Log', content: 'Every missed heartbeat or manual failure signal is recorded here for post-mortem analysis.' },
         { target: '#tour-pause-toggle', title: 'Maintenance Mode', content: 'Pausing here stops all alerts. Use this when performing server maintenance or database migrations.' },
       ];
-    } else if (pathname.startsWith('/dashboard/') && !pathname.includes('/incidents') && !pathname.includes('/profile')) {
+    } else if (pathname === '/dashboard/ssl') {
+      steps = [
+        { target: '#tour-add-ssl', title: 'Add Certificate', content: 'Track an SSL certificate by just entering its domain. We automatically fetch the chain and expiry dates.', position: 'bottom' },
+        { target: '#tour-ssl-search', title: 'Find Certificates', content: 'Search through your monitored domains instantly.', position: 'bottom' },
+        { target: '#tour-ssl-grid', title: 'Certificate Status', content: 'View real-time remaining days and validation status. Cards turn amber or red as expiry approaches.', position: 'left' },
+      ];
+    } else if (pathname.startsWith('/dashboard/ssl/')) {
+      steps = [
+        { target: '#tour-ssl-days', title: 'Expiry Countdown', content: 'See exactly how many days are left until the SSL certificate expires. If it turns red, renew immediately!' },
+        { target: '#tour-ssl-details', title: 'Certificate Information', content: 'View details about the issuer, organization, and the exact validity dates extracted from the cert.' },
+        { target: '#tour-ssl-recheck', title: 'Manual Refresh', content: 'Click here to force our agents to re-fetch the certificate and verify its current status.', position: 'left' },
+        { target: '#tour-ssl-alerts', title: 'Notification Milestones', content: 'A record of which expiration alerts have been automatically sent to your email.' },
+      ];
+    } else if (pathname === '/dashboard/api-keys') {
+      steps = [
+        { target: '#tour-add-key', title: 'Vault New Key', content: 'Securely track new API keys for external services like Stripe or AWS so you never miss a rotation.', position: 'bottom' },
+        { target: '#tour-keys-grid', title: 'Key Inventory', content: 'View your keys, their environment tags, and expiry alerts. You can quickly remove tracking from here.', position: 'left' },
+      ];
+    } else if (pathname.startsWith('/dashboard/') && !pathname.includes('/incidents') && !pathname.includes('/profile') && !pathname.includes('/ssl') && !pathname.includes('/api-keys')) {
       steps = [
         { target: '#tour-api-uptime', title: 'Availability Score', content: 'Your 24-hour uptime percentage. We aggregate pings from all worldwide agents to calculate this real-time health score.' },
         { target: '#tour-api-latency', title: 'Global Response Time', content: 'The average time it takes for our agents to receive a full response. Lower is better for user experience!' },

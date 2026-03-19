@@ -92,12 +92,12 @@ export default function SslPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="relative group">
+                    <div id="tour-ssl-search" className="relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4 group-focus-within:text-teal-400 transition-colors" />
                         <input type="text" placeholder="Find certificate..." value={search} onChange={e => setSearch(e.target.value)}
                             className="premium-input pl-12 pr-4 py-2.5 w-72" suppressHydrationWarning />
                     </div>
-                    <button onClick={() => setIsAdding(true)} suppressHydrationWarning
+                    <button id="tour-add-ssl" onClick={() => setIsAdding(true)} suppressHydrationWarning
                         className="premium-button flex items-center gap-2"
                         style={{ background: 'linear-gradient(135deg, #0d9488, #0891b2)' }}>
                         <Plus className="w-5 h-5" /> Add SSL Monitor
@@ -122,7 +122,7 @@ export default function SslPage() {
             )}
 
             {/* ─── Grid ────────────────────────────────────────────────── */}
-            <div className="min-h-[100px]">
+            <div id="tour-ssl-grid" className="min-h-[100px]">
                 <AnimatePresence mode="wait">
                     {loading ? (
                         <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -207,7 +207,7 @@ export default function SslPage() {
 
                                     <div>
                                         <label className={LABEL}>Friendly Name</label>
-                                        <input type="text" required placeholder="e.g. Production API"
+                                        <input id="tour-ssl-form-name" type="text" required placeholder="e.g. Production API"
                                             value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
                                             className={INPUT} suppressHydrationWarning />
                                     </div>
@@ -216,7 +216,7 @@ export default function SslPage() {
                                         <label className={LABEL}>Domain</label>
                                         <div className="relative">
                                             <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-                                            <input type="text" required placeholder="example.com"
+                                            <input id="tour-ssl-form-domain" type="text" required placeholder="example.com"
                                                 value={form.domain} onChange={e => setForm({ ...form, domain: e.target.value })}
                                                 className={INPUT + ' font-mono'} style={{ paddingLeft: '2.5rem' }} suppressHydrationWarning />
                                         </div>
@@ -229,7 +229,7 @@ export default function SslPage() {
                                         <label className={LABEL}>Alert Email</label>
                                         <div className="relative">
                                             <Bell className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-                                            <input type="email" placeholder="alerts@company.com"
+                                            <input id="tour-ssl-form-email" type="email" placeholder="alerts@company.com"
                                                 value={form.alertEmail} onChange={e => setForm({ ...form, alertEmail: e.target.value })}
                                                 className={INPUT} style={{ paddingLeft: '2.5rem' }} suppressHydrationWarning />
                                         </div>
@@ -257,7 +257,7 @@ export default function SslPage() {
                                         style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                                         Cancel
                                     </button>
-                                    <button type="submit" disabled={submitting}
+                                    <button id="tour-ssl-form-submit" type="submit" disabled={submitting}
                                         className="flex-1 py-3 rounded-xl font-black text-sm text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-all"
                                         style={{ background: submitting ? 'rgba(13,148,136,0.5)' : 'linear-gradient(135deg, #0d9488, #0891b2)', boxShadow: '0 4px 20px rgba(13,148,136,0.25)' }}>
                                         {submitting ? 'Adding...' : '🔒 Start Monitoring'}
