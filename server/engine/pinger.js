@@ -7,6 +7,7 @@ const Incident = require('../models/Incident');
 const User = require('../models/User');
 const cron = require('node-cron');
 const { sendAlertEmail, sendRecoveryEmail } = require('../utils/mailer');
+const { runWithLimit } = require('../utils/async');
 
 // Reuse connections to skip DNS/TCP/TLS handshake overhead on repeated pings
 const axiosInstance = axios.create({
@@ -225,16 +226,51 @@ const processPing = async (api, io) => {
 // Cron scheduler
 // -------------------------------------------------------------------
 const startMonitoring = (io) => {
+    // Run every minute
     cron.schedule('* * * * *', async () => {
-        console.log('Running monitoring cron job...');
-        const apis = await API.find({ isActive: true });
+        const startTime = Date.now();
+        console.log(`[Pinger] Starting check cycle at ${new Date().toISOString()}`);
 
-        // Stagger pings (100ms apart) to avoid network spikes that inflate latency
-        apis.forEach((api, index) => {
-            setTimeout(() => {
-                processPing(api, io);
-            }, index * 100);
-        });
+        try {
+            // Find APIs that are ACTIVE and (lastChecked is null OR lastChecked + interval <= now)
+            const apis = await API.find({
+                isActive: true,
+                $or: [
+                    { lastChecked: { $exists: false } },
+                    { lastChecked: null },
+                    {
+                        $expr: {
+                            $lte: [
+                                { $add: ["$lastChecked", { $multiply: ["$interval", 60000] }] },
+                                new Date()
+                            ]
+                        }
+                    }
+                ]
+            });
+
+            if (apis.length === 0) {
+                console.log('[Pinger] No APIs due for monitoring in this cycle.');
+                return;
+            }
+
+            console.log(`[Pinger] Processing ${apis.length} due monitors...`);
+
+            // Process pings in parallel with a limit of 50 concurrent requests
+            // to avoid overwhelming the server network stack or inflating local latency
+            await runWithLimit(50, apis, async (api) => {
+                // Add a small random jitter (0-2000ms) to each individual ping 
+                // within the minute to spread the load even further
+                await new Promise(resolve => setTimeout(resolve, Math.random() * 2000));
+                return processPing(api, io);
+            });
+
+            const duration = Date.now() - startTime;
+            console.log(`[Pinger] Cycle completed in ${duration}ms for ${apis.length} monitors.`);
+
+        } catch (error) {
+            console.error('[Pinger] Critical Error in monitoring cycle:', error);
+        }
     });
 };
 

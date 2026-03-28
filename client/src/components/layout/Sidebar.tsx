@@ -131,12 +131,12 @@ export default function Sidebar() {
     } else if (pathname.startsWith('/dashboard/heartbeats/')) {
       steps = [
         { target: '#tour-hb-status', title: 'Live Health Status', content: 'Is your background job checking in? This indicator shows if we\'ve received a signal within the expected timeframe.' },
-        { target: '#tour-hb-avg-duration', title: 'Average Runtime', content: 'We track how long your job usually takes. Use this to detect "Ghost" processes that finish too fast or too slow.' },
+        { target: '#tour-hb-avg-duration', title: 'Average Runtime', content: 'We track how long your job usually takes. Use this to detect "Ghost" processes that finish too fast or too slow.', position: 'right' },
         { target: '#tour-hb-max-limit', title: 'Safety Timeout', content: 'Your defined "Stuck" threshold. If a job runs longer than this, we\'ll alert you immediately.' },
-        { target: '#tour-integration', title: 'Dynamic Signal API', content: 'Integrate in seconds! Use these start, success, and fail signals to track the full lifecycle of your tasks.' },
+        { target: '#tour-integration', title: 'Dynamic Signal API', content: 'Integrate in seconds! Use these start, success, and fail signals to track the full lifecycle of your tasks.', position: 'top' },
         { target: '#tour-latency-chart', title: 'Execution Timeline', content: 'A visual trend of your job performance. Spikes here might indicate database bottlenecks or resource leaks.' },
-        { target: '#tour-hb-incidents-sidebar', title: 'Failure Log', content: 'Every missed heartbeat or manual failure signal is recorded here for post-mortem analysis.' },
-        { target: '#tour-pause-toggle', title: 'Maintenance Mode', content: 'Pausing here stops all alerts. Use this when performing server maintenance or database migrations.' },
+        { target: '#tour-hb-incidents-sidebar', title: 'Failure Log', content: 'Every missed heartbeat or manual failure signal is recorded here for post-mortem analysis.', position: 'left' },
+        { target: '#tour-pause-toggle', title: 'Maintenance Mode', content: 'Pausing here stops all alerts. Use this when performing server maintenance or database migrations.', position: 'bottom' },
       ];
     } else if (pathname === '/dashboard/ssl') {
       steps = [
@@ -188,7 +188,7 @@ export default function Sidebar() {
               <ShieldCheck className="text-white w-7 h-7" />
             </div>
           </div>
-          <span className="text-3xl font-black tracking-tighter text-white">Monitor<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">P</span></span>
+          <span className="text-3xl font-black tracking-tighter text-white">PingForge</span>
         </Link>
       </div>
 

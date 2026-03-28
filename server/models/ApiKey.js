@@ -65,4 +65,8 @@ apiKeySchema.pre('save', function(next) {
     next();
 });
 
+// Index for performance
+apiKeySchema.index({ status: 1 });
+apiKeySchema.index({ userId: 1 });
+
 module.exports = mongoose.model('ApiKey', apiKeySchema);

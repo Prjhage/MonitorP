@@ -67,7 +67,7 @@ app.get('/test-route', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-    res.send('MonitorP API Server is running...');
+    res.send('PingForge API Server is running...');
 });
 
 // Mock Endpoint for Testing

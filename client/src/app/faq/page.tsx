@@ -8,18 +8,18 @@ import { useAuth } from '@/context/AuthContext';
 
 const faqs = [
     {
-        question: "How does MonitorP work?",
-        answer: "MonitorP works by periodically sending pings to your APIs and websites from multiple global regions. We measure response times, status codes, and verify response bodies against your custom assertions. If we detect a failure, we immediately notify you via your chosen alert channels.",
+        question: "How does PingForge work?",
+        answer: "PingForge works by periodically sending pings to your APIs and websites from multiple global regions. We measure response times, status codes, and verify response bodies against your custom assertions. If we detect a failure, we immediately notify you via your chosen alert channels.",
         icon: <Globe className="w-5 h-5 text-blue-500" />
     },
     {
         question: "Is it feasible for large-scale enterprise use?",
-        answer: "Absolutely. MonitorP is built on a scalable, cloud-native architecture capable of handling thousands of monitors per account. We offer regional failover, high-frequency pings (down to 30 seconds), and team collaboration features designed for production-grade engineering environments.",
+        answer: "Absolutely. PingForge is built on a scalable, cloud-native architecture capable of handling thousands of monitors per account. We offer regional failover, high-frequency pings (down to 30 seconds), and team collaboration features designed for production-grade engineering environments.",
         icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />
     },
     {
         question: "What is Heartbeat monitoring?",
-        answer: "Heartbeat monitoring is for internal tasks like cron jobs or background scripts that can't be reached by external pings. Instead, your job sends a 'heartbeat' signal to MonitorP when it finishes. If we don't hear from your job within the expected timeframe, we alert you immediately.",
+        answer: "Heartbeat monitoring is for internal tasks like cron jobs or background scripts that can't be reached by external pings. Instead, your job sends a 'heartbeat' signal to PingForge when it finishes. If we don't hear from your job within the expected timeframe, we alert you immediately.",
         icon: <Heart className="w-5 h-5 text-pink-500" />
     },
     {

@@ -13,7 +13,7 @@ const sendEmail = async ({ to, subject, html }) => {
 
   // TO INTEGRATE RESEND:
   // const resend = new Resend(process.env.RESEND_API_KEY);
-  // await resend.emails.send({ from: 'MonitorP <alerts@monitorp.com>', to, subject, html });
+  // await resend.emails.send({ from: 'PingForge <alerts@pingforge.com>', to, subject, html });
 
   return true;
 };
@@ -99,7 +99,7 @@ const sendSslExpiryWarning = async (user, sslMonitor, daysRemaining) => {
       </table>
       <p>Please renew your SSL certificate immediately to avoid security warnings on your site.</p>
       <hr />
-      <p>Check your MonitorP dashboard for full details.</p>
+      <p>Check your PingForge dashboard for full details.</p>
     </div>
   `;
   return sendEmail({ to: sslMonitor.alertEmail || user.email, subject, html });
@@ -119,7 +119,7 @@ const sendSslExpiredAlert = async (user, sslMonitor) => {
       </table>
       <p style="color: #ef4444; font-weight: bold;">ACTION REQUIRED: Renew this certificate immediately!</p>
       <hr />
-      <p>Check your MonitorP dashboard for full details.</p>
+      <p>Check your PingForge dashboard for full details.</p>
     </div>
   `;
   return sendEmail({ to: sslMonitor.alertEmail || user.email, subject, html });

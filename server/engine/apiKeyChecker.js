@@ -1,17 +1,22 @@
-const cron = require('node-cron');
-const ApiKey = require('../models/ApiKey');
-const User = require('../models/User');
-const { sendAlertEmail } = require('../utils/mailer');
+const { runWithLimit } = require('../utils/async');
 
 const startApiKeyChecker = (io) => {
     // Run daily at midnight
     cron.schedule('0 0 * * *', async () => {
-        console.log('🔍 Checking API Keys for expiry...');
+        const startTime = Date.now();
+        console.log('[API Key] Starting daily check cycle...');
         try {
             const now = new Date();
             const keys = await ApiKey.find({ status: { $ne: 'EXPIRED' } });
+            
+            if (keys.length === 0) {
+                console.log('[API Key] No active keys found.');
+                return;
+            }
 
-            for (const key of keys) {
+            console.log(`[API Key] Processing ${keys.length} keys...`);
+
+            await runWithLimit(10, keys, async (key) => {
                 const diffTime = key.expiryDate - now;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -55,39 +60,39 @@ const startApiKeyChecker = (io) => {
                                     </div>
                                     <p>Please rotate your key to avoid service interruption.</p>
                                     <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-                                    <p style="color: #6b7280; font-size: 12px;">This is an automated alert from MonitorP.</p>
+                                    <p style="color: #6b7280; font-size: 12px;">This is an automated alert from PingForge.</p>
                                 </div>
                             `
                         };
 
-                        // Use the existing mailer utility but we need to make it generic
-                        // For now, let's assume we can pass custom subject/text to a generic sender
-                        // or we just use the mailer we have.
                         try {
                             const { transporter } = require('../utils/mailer');
                             await transporter.sendMail({
-                                from: `"MonitorP Alerts" <${process.env.EMAIL_USER}>`,
+                                from: `"PingForge Alerts" <${process.env.EMAIL_USER}>`,
                                 to: key.alertEmail || user.email,
                                 subject: alertData.subject,
                                 text: alertData.text,
                                 html: alertData.html
                             });
-                            console.log(`Alert sent for key: ${key.serviceName} to ${key.alertEmail || user.email}`);
+                            console.log(`[API Key] Alert sent for key: ${key.serviceName} to ${key.alertEmail || user.email}`);
                         } catch (mailError) {
-                            console.error('Failed to send expiry email:', mailError);
+                            console.error(`[API Key] Failed to send alert for ${key.serviceName}:`, mailError.message);
                         }
                     }
                 }
-            }
+            });
+
+            const duration = Date.now() - startTime;
+            console.log(`[API Key] Cycle completed in ${duration}ms.`);
+
         } catch (error) {
-            console.error('API Key Checker Error:', error);
+            console.error('[API Key] Critical Error in checker:', error);
         }
     });
 
     // Run once on startup for debugging/initial check
     process.nextTick(async () => {
-        console.log('🚀 Initial API Key check on startup...');
-        // We could trigger the same logic here if needed for testing
+        console.log('🚀 Initial API Key check scheduled on startup...');
     });
 };
 

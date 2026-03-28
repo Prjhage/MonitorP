@@ -183,7 +183,7 @@ export default function HeartbeatsPage() {
                                                 <ShieldCheck className="w-6 h-6 text-emerald-400" />
                                             </div>
                                             <h4 className="text-lg font-black text-white mb-2">Signal System Activated!</h4>
-                                            <p className="text-sm text-emerald-400/80">MonitorX now supports a 3-tier signal system for total control.</p>
+                                            <p className="text-sm text-emerald-400/80">PingForge now supports a 3-tier signal system for total control.</p>
                                         </div>
 
                                         <div className="space-y-4">

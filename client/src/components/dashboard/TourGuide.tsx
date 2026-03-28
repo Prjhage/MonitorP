@@ -30,8 +30,8 @@ export default function TourGuide() {
             if (element) {
                 const rect = element.getBoundingClientRect();
                 const cardWidth = 340;
-                const cardHeight = 360; // Estimated max height
-                const padding = 20;
+                const cardHeight = 440; // Increased estimate for taller content
+                const padding = 24; // Increased padding for safety
                 const viewportHeight = window.innerHeight;
                 const viewportWidth = window.innerWidth;
 
@@ -66,10 +66,10 @@ export default function TourGuide() {
                 const viewportHeight = window.innerHeight;
 
                 // Improved scroll logic: ensure we always see the target AND some extra space for the card
-                const scrollOffset = 100; // Extra buffer
                 element.scrollIntoView({
                     behavior: 'smooth',
-                    block: 'center'
+                    block: 'center',
+                    inline: 'nearest'
                 });
             }
         }
@@ -162,6 +162,18 @@ export default function TourGuide() {
 
             const vertTransform = finalPosition === 'top' ? 'translateY(-100%)' : '';
             transform = transform ? `${transform} ${vertTransform}` : vertTransform;
+
+            // --- Vertical Clamping (Crucial Fix) ---
+            const actualCardHeight = 440; // Use same estimate
+            const estimatedTop = finalPosition === 'top' ? top - actualCardHeight : top;
+            
+            if (estimatedTop < gap) {
+                // Too high? Push it down
+                top = gap + (finalPosition === 'top' ? actualCardHeight : 0);
+            } else if (estimatedTop + actualCardHeight > viewportHeight - gap) {
+                // Too low? Pull it up
+                top = viewportHeight - gap - (finalPosition === 'top' ? 0 : actualCardHeight);
+            }
         }
 
         return {

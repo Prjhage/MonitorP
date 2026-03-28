@@ -71,4 +71,8 @@ const sslMonitorSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
+// Index for performance
+sslMonitorSchema.index({ isActive: 1, domain: 1 });
+sslMonitorSchema.index({ userId: 1 });
+
 module.exports = mongoose.model('SslMonitor', sslMonitorSchema);

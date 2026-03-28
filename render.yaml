@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: monitorp-api
+    name: pingforge-api
     env: node
     plan: free
     rootDir: server

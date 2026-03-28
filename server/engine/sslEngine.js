@@ -96,25 +96,38 @@ const processSslMonitor = async (monitor, io) => {
     }
 };
 
+const { runWithLimit } = require('../utils/async');
+
 /**
  * Start the SSL monitoring cron job.
  * Runs every 12 hours and on startup (immediate first run).
  */
 const startSslEngine = (io) => {
     const runChecks = async () => {
+        const startTime = Date.now();
         console.log('[SSL] Running SSL certificate check cycle...');
         try {
             const monitors = await SslMonitor.find({ isActive: true });
-            if (monitors.length === 0) return;
+            if (monitors.length === 0) {
+                console.log('[SSL] No active monitors found.');
+                return;
+            }
 
-            // Stagger checks by 500ms each to avoid network spikes
-            monitors.forEach((monitor, index) => {
-                setTimeout(() => {
-                    processSslMonitor(monitor, io).catch(err =>
-                        console.error(`[SSL] Uncaught error for ${monitor.domain}:`, err.message)
-                    );
-                }, index * 500);
+            console.log(`[SSL] Processing ${monitors.length} certificates...`);
+
+            // Use runWithLimit to process SSL checks in parallel (limit 10 at a time)
+            // SSL checks can be slightly more intensive than simple HTTP pings
+            await runWithLimit(10, monitors, async (monitor) => {
+                // Add jitter to avoid burst
+                await new Promise(resolve => setTimeout(resolve, Math.random() * 5000));
+                return processSslMonitor(monitor, io).catch(err =>
+                    console.error(`[SSL] Uncaught error for ${monitor.domain}:`, err.message)
+                );
             });
+
+            const duration = Date.now() - startTime;
+            console.log(`[SSL] Cycle completed in ${duration}ms.`);
+
         } catch (err) {
             console.error('[SSL] Engine cron error:', err.message);
         }
@@ -124,7 +137,7 @@ const startSslEngine = (io) => {
     cron.schedule('0 */12 * * *', runChecks);
 
     // Also run immediately on startup (after a short delay for DB to be ready)
-    setTimeout(runChecks, 5000);
+    setTimeout(runChecks, 10000);
 };
 
 module.exports = { startSslEngine, processSslMonitor };

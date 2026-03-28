@@ -5,6 +5,10 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Shield, Activity, Bell, BarChart3, Globe, ArrowRight, ArrowUpRight, CheckCircle2, Zap, User, Code2, CheckSquare, Heart, Lock } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import TrustBar from '@/components/landing/TrustBar';
+import StatsSection from '@/components/landing/StatsSection';
+import Testimonials from '@/components/landing/Testimonials';
+import CaseStudies from '@/components/landing/CaseStudies';
 
 export default function LandingPage() {
   const { user } = useAuth();
@@ -74,10 +78,12 @@ export default function LandingPage() {
                   <Shield className="text-white w-6 h-6 drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]" />
                 </div>
               </div>
-              <span className="text-xl font-black tracking-tighter text-white group-hover:text-blue-400 transition-colors">Monitor<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">P</span></span>
+              <span className="text-xl font-black tracking-tighter text-white group-hover:text-blue-400 transition-colors">Ping<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Forge</span></span>
             </Link>
             <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
               <a href="#features" className="hover:text-white transition-colors">Features</a>
+              <Link href="/docs" className="hover:text-white transition-colors">Docs</Link>
+              <Link href="/demo" className="hover:text-white transition-colors">Live Demo</Link>
               <Link href="/faq" className="hover:text-white transition-colors">FAQ</Link>
             </div>
             <div className="flex items-center gap-4">
@@ -283,6 +289,9 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
+        {/* Trust Bar — directly below hero */}
+        <TrustBar />
+
         {/* Features Grid */}
         <section id="features" className="py-32 px-6 max-w-7xl mx-auto">
           <div className="text-center mb-20">
@@ -310,12 +319,7 @@ export default function LandingPage() {
                 desc: "Automatic tracking of certificate expiry and SSL health. Get notified before your users see a security warning.",
                 color: "emerald"
               },
-              {
-                icon: <Shield className="w-6 h-6" />,
-                title: "API Key Protection",
-                desc: "Proactive scanning for leaked API keys on public GitHub. Prevent unauthorized access before damage is done.",
-                color: "purple"
-              },
+
               {
                 icon: <BarChart3 className="w-6 h-6" />,
                 title: "Performance Analytics",
@@ -359,6 +363,15 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Stats Counter */}
+        <StatsSection />
+
+        {/* Case Studies */}
+        <CaseStudies />
+
+        {/* Testimonials */}
+        <Testimonials />
+
         {/* Footer */}
         <footer className="relative py-24 px-6 overflow-hidden">
           {/* Footer Background & Glow */}
@@ -374,7 +387,7 @@ export default function LandingPage() {
                   <Shield className="text-white w-6 h-6 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
                 </div>
               </div>
-              <span className="text-2xl font-black tracking-tighter text-white">Monitor<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">P</span></span>
+              <span className="text-2xl font-black tracking-tighter text-white">PingForge</span>
             </div>
 
             <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 mb-12 text-sm font-bold uppercase tracking-widest">
@@ -391,7 +404,7 @@ export default function LandingPage() {
 
             <div className="flex flex-col items-center gap-4">
               <div className="text-[11px] font-black text-gray-600 uppercase tracking-[0.3em] mb-2">
-                &copy; 2026 MonitorP SaaS
+                &copy; 2026 PingForge SaaS
               </div>
               {/* <div className="flex gap-6">
                 <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/5 flex items-center justify-center text-gray-600 hover:text-white hover:border-white/20 transition-all cursor-pointer">

@@ -33,4 +33,8 @@ const apiSchema = new mongoose.Schema({
     assertions: [assertionSchema],
 });
 
+// Index for high-concurrency polling
+apiSchema.index({ isActive: 1, lastChecked: 1, interval: 1 });
+apiSchema.index({ userId: 1 });
+
 module.exports = mongoose.model('API', apiSchema);

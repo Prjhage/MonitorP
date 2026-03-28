@@ -5,13 +5,13 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import { Shield, CheckCircle2, AlertCircle, Clock, ExternalLink, TrendingUp } from 'lucide-react';
-import { format } from 'date-fns';
+import { Shield, CheckCircle2, AlertCircle, Clock, ExternalLink, TrendingUp, Heart, Lock, ShieldCheck } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 // ─── Uptime Calendar (30 squares) ─────────────────────────────────────────────
-function UptimeCalendar({ calendar }: { calendar: { date: string; uptime: number | null; avgResponseTime: number | null }[] }) {
+function UptimeCalendar({ calendar }: { calendar: { date: string; uptime: number | null }[] }) {
     const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
 
     const getColor = (uptime: number | null) => {
@@ -36,7 +36,7 @@ function UptimeCalendar({ calendar }: { calendar: { date: string; uptime: number
                             setTooltip({
                                 x: rect.left - (parentRect?.left ?? 0) + rect.width / 2,
                                 y: rect.top - (parentRect?.top ?? 0) - 10,
-                                text: `${format(new Date(day.date), 'MMM d')}: ${day.uptime !== null ? `${day.uptime}% up` : 'No data'}${day.avgResponseTime ? ` · ${day.avgResponseTime}ms` : ''}`
+                                text: `${format(new Date(day.date), 'MMM d')}: ${day.uptime !== null ? `${day.uptime}% up` : 'No data'}`
                             });
                         }}
                         onMouseLeave={() => setTooltip(null)}
@@ -50,7 +50,6 @@ function UptimeCalendar({ calendar }: { calendar: { date: string; uptime: number
                     <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#111]" />
                 </div>
             )}
-            {/* Legend */}
             <div className="flex items-center gap-4 mt-3 justify-end">
                 <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
                     <div className="w-3 h-3 rounded-[2px] bg-white/[0.05] border border-white/[0.04]" /> No data
@@ -69,37 +68,16 @@ function UptimeCalendar({ calendar }: { calendar: { date: string; uptime: number
     );
 }
 
-// ─── SVG Sparkline ────────────────────────────────────────────────────────────
-function Sparkline({ data }: { data: (number | null)[] }) {
-    const valid = data.filter((d): d is number => d !== null);
-    if (valid.length < 2) return <div className="h-10 text-xs text-gray-700 flex items-center">Not enough data</div>;
-
-    const max = Math.max(...valid);
-    const min = Math.min(...valid);
-    const range = max - min || 1;
-    const W = 200, H = 40;
-
-    const points = data
-        .map((v, i): [number, number] | null => v !== null ? [
-            (i / (data.length - 1)) * W,
-            H - ((v - min) / range) * (H - 4) - 2
-        ] : null)
-        .filter((p): p is [number, number] => p !== null);
-
-    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0]} ${p[1]}`).join(' ');
-
+// ─── Status Indicator ─────────────────────────────────────────────────────────
+function StatusIndicator({ status, labelUp = "Operational", labelDown = "Outage" }: { status: string; labelUp?: string; labelDown?: string }) {
+    const isUp = status === 'UP' || status === 'VALID';
     return (
-        <svg width={W} height={H} className="overflow-visible" style={{ width: '100%', maxWidth: W }}>
-            <defs>
-                <linearGradient id="spark-grad" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-                </linearGradient>
-            </defs>
-            <path d={`${pathD} L ${points[points.length - 1][0]} ${H} L ${points[0][0]} ${H} Z`}
-                fill="url(#spark-grad)" />
-            <path d={pathD} fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeLinejoin="round" />
-        </svg>
+        <div className="flex items-center gap-2">
+            <span className={`text-sm font-semibold ${isUp ? 'text-emerald-500' : 'text-red-500'}`}>
+                {isUp ? labelUp : labelDown}
+            </span>
+            <div className={`w-3 h-3 rounded-full ${isUp ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+        </div>
     );
 }
 
@@ -157,13 +135,13 @@ export default function PublicStatusPage() {
     };
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
         </div>
     );
 
     if (!data) return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-center">
             <AlertCircle className="w-16 h-16 text-gray-600 mb-4" />
             <h1 className="text-2xl font-bold text-white mb-2">Status Page Not Found</h1>
             <p className="text-gray-500">The status page for "{companyName}" could not be found.</p>
@@ -173,151 +151,184 @@ export default function PublicStatusPage() {
     const allOperational = data.activeIncidents.length === 0;
 
     return (
-        <div className="min-h-screen py-16 px-6 max-w-4xl mx-auto">
-
-            {/* ─── Header ───────────────────────────────────────────────── */}
-            <div className="flex flex-col items-center mb-16">
-                <div className="flex items-center gap-3 mb-8">
-                    <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-                        <Shield className="text-white w-6 h-6" />
-                    </div>
-                    <span className="text-xl font-bold tracking-tight text-white">{data.companyName}</span>
-                </div>
-
-                {/* Health badge + overall status */}
-                <div className="flex flex-col sm:flex-row items-center gap-8 mb-8">
-                    <HealthBadge score={data.overallHealth ?? 100} />
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                        className={`px-8 py-4 rounded-2xl flex items-center gap-3 border shadow-lg ${allOperational
-                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                            : 'bg-red-500/10 border-red-500/20 text-red-500'
-                            }`}
-                    >
-                        {allOperational ? <CheckCircle2 className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
-                        <span className="text-xl font-bold">
-                            {allOperational ? 'All Systems Operational' : 'Partial System Outage'}
-                        </span>
-                    </motion.div>
-                </div>
-                <p className="text-xs text-gray-600">Last updated {format(new Date(), "MMM d, h:mm aa")}</p>
-            </div>
-
-            {/* ─── API Status + 30-day Calendar ─────────────────────────── */}
-            <div className="glass-card overflow-hidden mb-12">
-                <div className="p-6 border-b border-white/5 bg-white/5">
-                    <h2 className="text-lg font-semibold text-white">Current Status & Uptime History</h2>
-                    <p className="text-xs text-gray-500 mt-1">30-day uptime calendar — hover cells for details</p>
-                </div>
-                <div className="divide-y divide-white/5">
-                    {data.apis.map((api: any) => {
-                        const calendar: any[] = data.uptimeCalendar?.[api._id] ?? [];
-                        const avgUptime = calendar.filter((d: any) => d.uptime !== null).length > 0
-                            ? (calendar.reduce((acc: number, d: any) => acc + (d.uptime ?? 100), 0) / 30).toFixed(2)
-                            : '100.00';
-                        const rtData = calendar.map((d: any) => d.avgResponseTime as number | null);
-
-                        return (
-                            <motion.div key={api._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                                className="p-6">
-                                {/* Top row */}
-                                <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h3 className="text-white font-bold mb-0.5">{api.name}</h3>
-                                        <p className="text-gray-500 text-sm font-mono truncate max-w-[240px] md:max-w-md">{api.url}</p>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <div className="text-right">
-                                            <div className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">30-day avg</div>
-                                            <div className="text-lg font-black text-white">{avgUptime}%</div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-sm font-semibold ${api.status === 'UP' ? 'text-emerald-500' : 'text-red-500'}`}>
-                                                {api.status === 'UP' ? 'Operational' : 'Major Outage'}
-                                            </span>
-                                            <div className={`w-3 h-3 rounded-full ${api.status === 'UP' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Calendar */}
-                                {calendar.length > 0 && <UptimeCalendar calendar={calendar} />}
-
-                                {/* Sparkline */}
-                                {rtData.some(v => v !== null) && (
-                                    <div className="mt-4 pt-4 border-t border-white/[0.04]">
-                                        <div className="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                            <TrendingUp className="w-3 h-3 text-blue-500" /> Response Time Trend (30 days)
-                                        </div>
-                                        <Sparkline data={rtData} />
-                                    </div>
-                                )}
-                            </motion.div>
-                        );
-                    })}
-                    {data.apis.length === 0 && (
-                        <div className="p-12 text-center text-gray-500">No APIs being monitored.</div>
-                    )}
-                </div>
-            </div>
-
-            {/* ─── Active Incidents ──────────────────────────────────────── */}
-            {!allOperational && (
-                <div className="mb-12">
-                    <h2 className="text-xl font-bold text-white mb-6">Active Incidents</h2>
-                    <div className="space-y-4">
-                        {data.activeIncidents.map((incident: any) => (
-                            <div key={incident._id} className="border border-red-500/20 bg-red-500/5 rounded-2xl p-6">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <AlertCircle className="w-5 h-5 text-red-500" />
-                                    <h3 className="text-lg font-bold text-white">{incident.apiId.name} Downtime</h3>
-                                </div>
-                                <p className="text-gray-400 mb-4">{incident.reason}</p>
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
-                                    <Clock className="w-4 h-4" />
-                                    Started {format(new Date(incident.startTime), 'MMM d, h:mm aa')}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* ─── Incident History ──────────────────────────────────────── */}
-            <div>
-                <h2 className="text-xl font-bold text-white mb-6">Incident History (Last 7 Days)</h2>
-                <div className="space-y-4">
-                    {data.recentIncidents.length === 0 ? (
-                        <div className="p-8 text-center border-2 border-dashed border-white/5 rounded-2xl">
-                            <p className="text-gray-500 italic">No incidents reported in the last 7 days.</p>
+        <div className="min-h-screen bg-[#0a0a0a] py-16 px-6">
+            <div className="max-w-4xl mx-auto">
+                {/* ─── Header ───────────────────────────────────────────────── */}
+                <div className="flex flex-col items-center mb-16">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <Shield className="text-white w-6 h-6" />
                         </div>
-                    ) : (
-                        data.recentIncidents.map((incident: any) => (
-                            <div key={incident._id} className="glass-card p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <CheckCircle2 className="w-5 h-5 text-gray-400" />
-                                        <h3 className="text-white font-medium">{incident.apiId.name} Outage</h3>
-                                    </div>
-                                    <span className="text-sm text-gray-500">{incident.duration} min duration</span>
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                    Resolved on {format(new Date(incident.endTime), 'MMM d, h:mm aa')}
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </div>
+                        <span className="text-xl font-black tracking-tight text-white uppercase">{data.companyName}</span>
+                    </div>
 
-            {/* ─── Footer ───────────────────────────────────────────────── */}
-            <footer className="mt-20 pt-12 border-t border-white/5 flex flex-col items-center">
-                <p className="text-gray-600 text-sm mb-4">Powered by</p>
-                <Link href="/" className="flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity">
-                    <Shield className="w-5 h-5 text-blue-500" />
-                    <span className="font-bold text-white tracking-tight">MonitorP</span>
-                </Link>
-            </footer>
+                    <div className="flex flex-col sm:flex-row items-center gap-12 mb-8">
+                        <HealthBadge score={data.overallHealth ?? 100} />
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                            className={`px-10 py-5 rounded-[24px] flex items-center gap-4 border shadow-2xl ${allOperational
+                                ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500'
+                                : 'bg-red-500/5 border-red-500/20 text-red-500'
+                                }`}
+                        >
+                            {allOperational ? <CheckCircle2 className="w-7 h-7" /> : <AlertCircle className="w-7 h-7" />}
+                            <span className="text-2xl font-black tracking-tight">
+                                {allOperational ? 'Systems Operational' : 'Incident in Progress'}
+                            </span>
+                        </motion.div>
+                    </div>
+                </div>
+
+                {/* ─── API Status ─────────────────────────────────────────── */}
+                <div className="mb-12">
+                    <div className="flex items-center gap-3 mb-6 px-2">
+                        <TrendingUp className="w-5 h-5 text-blue-500" />
+                        <h2 className="text-xl font-black text-white uppercase tracking-wider">Public Endpoints</h2>
+                    </div>
+                    <div className="bg-white/[0.02] border border-white/[0.05] rounded-[32px] overflow-hidden divide-y divide-white/[0.03]">
+                        {data.apis.map((api: any) => {
+                            const calendar = data.uptimeCalendar?.[api._id] ?? [];
+                            return (
+                                <div key={api._id} className="p-8 hover:bg-white/[0.01] transition-colors">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div>
+                                            <h3 className="text-lg font-black text-white mb-1">{api.name}</h3>
+                                            <p className="text-gray-500 text-xs font-mono truncate max-w-xs">{api.url}</p>
+                                        </div>
+                                        <StatusIndicator status={api.status} />
+                                    </div>
+                                    <UptimeCalendar calendar={calendar} />
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* ─── Heartbeat Section ──────────────────────────────────── */}
+                {data.heartbeats?.length > 0 && (
+                    <div className="mb-12">
+                        <div className="flex items-center gap-3 mb-6 px-2">
+                            <Heart className="w-5 h-5 text-pink-500" />
+                            <h2 className="text-xl font-black text-white uppercase tracking-wider">Background Jobs</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {data.heartbeats.map((hb: any) => (
+                                <div key={hb._id} className="bg-white/[0.02] border border-white/[0.05] rounded-[24px] p-6 flex items-center justify-between">
+                                    <div className="min-w-0">
+                                        <h3 className="text-white font-black truncate">{hb.name}</h3>
+                                        <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold tracking-widest">
+                                            {hb.lastPingAt ? `Checked in ${formatDistanceToNow(new Date(hb.lastPingAt))} ago` : 'Never pinged'}
+                                        </p>
+                                    </div>
+                                    <StatusIndicator status={hb.status} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ─── SSL Status ─────────────────────────────────────────── */}
+                {data.sslMonitors?.length > 0 && (
+                    <div className="mb-12">
+                        <div className="flex items-center gap-3 mb-6 px-2">
+                            <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                            <h2 className="text-xl font-black text-white uppercase tracking-wider">Security & Certificates</h2>
+                        </div>
+                        <div className="bg-white/[0.02] border border-white/[0.05] rounded-[32px] overflow-hidden">
+                            <table className="w-full text-left">
+                                <thead className="bg-white/[0.03] border-b border-white/[0.05]">
+                                    <tr>
+                                        <th className="px-8 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Domain</th>
+                                        <th className="px-8 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Expiry</th>
+                                        <th className="px-8 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest text-right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/[0.03]">
+                                    {data.sslMonitors.map((ssl: any) => (
+                                        <tr key={ssl._id} className="hover:bg-white/[0.01] transition-colors">
+                                            <td className="px-8 py-6">
+                                                <div className="text-white font-black">{ssl.domain}</div>
+                                                <div className="text-[10px] text-gray-600 font-bold uppercase tracking-tighter">{ssl.name}</div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className={`text-sm font-black ${ssl.daysRemaining < 7 ? 'text-red-500' : ssl.daysRemaining < 30 ? 'text-amber-500' : 'text-gray-400'}`}>
+                                                    {ssl.daysRemaining} days left
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <StatusIndicator status={ssl.status} labelUp="Valid" labelDown="Warning" />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {/* ─── Active Incidents ──────────────────────────────────────── */}
+                {!allOperational && (
+                    <div className="mb-12">
+                        <h2 className="text-xl font-black text-white mb-6 uppercase tracking-wider px-2">Active Incidents</h2>
+                        <div className="space-y-4">
+                            {data.activeIncidents.map((incident: any) => (
+                                <div key={incident._id} className="border border-red-500/20 bg-red-500/5 rounded-[28px] p-8">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <AlertCircle className="w-6 h-6 text-red-500" />
+                                        <h3 className="text-xl font-black text-white">
+                                            {(incident.apiId?.name || incident.heartbeatId?.name)} Outage
+                                        </h3>
+                                    </div>
+                                    <p className="text-gray-400 mb-6 font-medium leading-relaxed">{incident.reason || 'Service is currently heartbeat-overdue or unreachable.'}</p>
+                                    <div className="flex items-center gap-2 text-xs text-gray-500 font-bold uppercase tracking-widest">
+                                        <Clock className="w-4 h-4" />
+                                        Started {format(new Date(incident.startTime), 'MMM d, h:mm aa')}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ─── Incident History ──────────────────────────────────────── */}
+                <div>
+                    <h2 className="text-xl font-black text-white mb-6 uppercase tracking-wider px-2">Incident History (7d)</h2>
+                    <div className="space-y-3">
+                        {data.recentIncidents.length === 0 ? (
+                            <div className="p-12 text-center border-2 border-dashed border-white/[0.03] rounded-[32px]">
+                                <p className="text-gray-600 font-bold italic">No incidents reported in the last 7 days.</p>
+                            </div>
+                        ) : (
+                            data.recentIncidents.map((incident: any) => (
+                                <div key={incident._id} className="bg-white/[0.02] border border-white/[0.05] rounded-[24px] p-6 flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex items-center justify-center">
+                                            <CheckCircle2 className="w-5 h-5 text-gray-500" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-white font-black">{incident.apiId?.name || incident.heartbeatId?.name} Outage</h3>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
+                                                Resolved {format(new Date(incident.endTime), 'MMM d')} • {incident.duration} min duration
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                {/* ─── Footer ───────────────────────────────────────────────── */}
+                <footer className="mt-28 py-12 border-t border-white/[0.05] flex flex-col items-center">
+                    <p className="text-gray-600 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Powered by</p>
+                    <Link href="/" className="flex items-center gap-3 grayscale opacity-30 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <Shield className="text-white w-5 h-5" />
+                        </div>
+                        <span className="text-lg font-black text-white tracking-tighter">Monitor<span className="text-blue-500">P</span></span>
+                    </Link>
+                </footer>
+            </div>
         </div>
     );
 }

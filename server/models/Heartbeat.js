@@ -88,4 +88,8 @@ const heartbeatSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// Index for high-concurrency polling
+heartbeatSchema.index({ isActive: 1, isPaused: 1, nextExpectedAt: 1 });
+heartbeatSchema.index({ userId: 1, slug: 1 });
+
 module.exports = mongoose.model('Heartbeat', heartbeatSchema);
