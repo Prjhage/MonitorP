@@ -18,6 +18,7 @@ const sslMonitorSchema = new mongoose.Schema({
     alertEmail: {
         type: String,
     },
+    alertChannels: [{ type: mongoose.Schema.Types.ObjectId, ref: 'AlertChannel' }],
     isActive: {
         type: Boolean,
         default: true,

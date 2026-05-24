@@ -21,6 +21,7 @@ const apiSchema = new mongoose.Schema({
     interval: { type: Number, default: 5 }, // in minutes
     timeout: { type: Number, default: 10000 }, // in ms
     alertEmail: { type: String },
+    alertChannels: [{ type: mongoose.Schema.Types.ObjectId, ref: 'AlertChannel' }],
     status: { type: String, enum: ['UP', 'DOWN', 'DEGRADED', 'PENDING'], default: 'PENDING' },
     lastChecked: { type: Date },
     isActive: { type: Boolean, default: true },

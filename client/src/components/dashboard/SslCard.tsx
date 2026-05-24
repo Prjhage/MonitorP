@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, ShieldAlert, ShieldX, AlertTriangle, RotateCcw, Globe } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, ShieldX, AlertTriangle, RotateCcw, Globe, Play, Pause, Trash2, ArrowUpRight, Wrench } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
+import { useAuth } from '@/context/AuthContext';
 
 interface SslMonitor {
     _id: string;
@@ -17,11 +18,14 @@ interface SslMonitor {
     lastChecked?: string;
     lastError?: string;
     isActive: boolean;
+    inMaintenance?: boolean;
 }
 
 interface SslCardProps {
     monitor: SslMonitor;
     onClick: () => void;
+    onTogglePause?: (e: React.MouseEvent) => void;
+    onDelete?: (e: React.MouseEvent) => void;
 }
 
 // ── Status config ──────────────────────────────────────────────────────────────
@@ -83,7 +87,8 @@ const getDaysColor = (days: number | undefined | null) => {
     return 'text-emerald-400';
 };
 
-export default function SslCard({ monitor, onClick }: SslCardProps) {
+export default function SslCard({ monitor, onClick, onTogglePause, onDelete }: SslCardProps) {
+    const { isAtLeast } = useAuth();
     const cfg = STATUS_CONFIG[monitor.status] || STATUS_CONFIG.PENDING;
     const Icon = cfg.icon;
     const daysColor = getDaysColor(monitor.daysRemaining);
@@ -122,14 +127,45 @@ export default function SslCard({ monitor, onClick }: SslCardProps) {
                             </h3>
                             <p className="text-gray-500 font-mono text-xs flex items-center gap-1 mt-0.5 truncate">
                                 <Globe className="w-3 h-3 shrink-0" /> {monitor.domain}
+                                {monitor.inMaintenance && (
+                                    <span className="ml-2 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-1">
+                                        <Wrench className="w-2 h-2" /> Maintenance
+                                    </span>
+                                )}
                             </p>
                         </div>
                     </div>
 
-                    {/* Status badge */}
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ${cfg.bgColor} border ${cfg.borderColor} shrink-0 ml-2`}>
-                        <Icon className={`w-3.5 h-3.5 ${cfg.textColor}`} />
-                        <span className={`text-[10px] font-black tracking-widest ${cfg.textColor}`}>{cfg.label}</span>
+                    <div className="flex items-center gap-2">
+                        {isAtLeast('admin') && (
+                            <>
+                                {onTogglePause && (
+                                    <button
+                                        onClick={onTogglePause}
+                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all border ${
+                                            !monitor.isActive
+                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
+                                                : 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20'
+                                        }`}
+                                        title={!monitor.isActive ? 'Resume' : 'Pause'}
+                                    >
+                                        {!monitor.isActive ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4" />}
+                                    </button>
+                                )}
+                                {onDelete && (
+                                    <button
+                                        onClick={onDelete}
+                                        className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500/20 transition-all"
+                                        title="Delete"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </>
+                        )}
+                        <div className="w-9 h-9 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-white/10 transition-all group-hover:rotate-45">
+                            <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                        </div>
                     </div>
                 </div>
 

@@ -31,6 +31,7 @@ const heartbeatSchema = new mongoose.Schema({
     alertEmail: {
         type: String
     },
+    alertChannels: [{ type: mongoose.Schema.Types.ObjectId, ref: 'AlertChannel' }],
     status: {
         type: String,
         enum: ['UP', 'DOWN', 'PENDING', 'RUNNING'],

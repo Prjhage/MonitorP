@@ -65,6 +65,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, loading } = useAuth();
+  const [mobileOpen, setMobileOpen] = React.useState(false);
 
   // While auth state is being determined, show nothing (avoids flash)
   if (loading) {
@@ -82,7 +83,7 @@ export default function DashboardLayout({
 
   return (
     <TourProvider>
-      <div className="h-screen flex bg-[#030303] relative overflow-hidden">
+      <div className="h-screen flex flex-col md:flex-row bg-[#030303] relative overflow-hidden">
         {/* Animated Background */}
         <div className="bg-animate">
           <div className="mesh-circle w-[600px] h-[600px] bg-blue-600/20 -top-[200px] -left-[100px]" />
@@ -90,8 +91,22 @@ export default function DashboardLayout({
           <div className="noise-overlay" />
         </div>
 
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto relative z-10">
+        {/* Mobile Header */}
+        <header className="md:hidden flex items-center justify-between p-4 border-b border-white/[0.04] bg-[#0a0a0a]/80 backdrop-blur-md relative z-30">
+          <div className="flex items-center gap-2">
+            <Shield className="w-6 h-6 text-blue-500" />
+            <span className="text-xl font-black text-white">PingForge</span>
+          </div>
+          <button 
+            onClick={() => setMobileOpen(true)}
+            className="p-2 bg-white/5 rounded-xl text-gray-400 hover:text-white"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+        </header>
+
+        <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+        <main className="flex-1 overflow-y-auto relative z-10 pb-20 md:pb-0">
           {children}
         </main>
         <TourGuide />

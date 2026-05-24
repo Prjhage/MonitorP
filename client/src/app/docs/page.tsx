@@ -27,8 +27,11 @@ const NAV = [
         color: 'text-emerald-400',
         items: [
             { id: 'api-monitors',       label: 'API Monitors' },
-            { id: 'heartbeat-monitors', label: 'Heartbeat Monitors' },
+            { id: 'tcp-monitors',       label: 'TCP Port Monitors' },
+            { id: 'dns-monitors',       label: 'DNS Monitoring' },
             { id: 'ssl-monitors',       label: 'SSL Certificates' },
+            { id: 'heartbeat-monitors', label: 'Heartbeat Monitors' },
+            { id: 'domain-expiry',      label: 'Domain Expiry' },
         ],
     },
     {
@@ -36,8 +39,9 @@ const NAV = [
         icon: Bell,
         color: 'text-amber-400',
         items: [
-            { id: 'email-alerts', label: 'Email Alerts (Soon)' },
-            { id: 'webhooks',     label: 'Webhooks (Soon)' },
+            { id: 'email-alerts', label: 'Email Alerts' },
+            { id: 'multi-channel', label: 'Slack & Discord' },
+            { id: 'webhooks',     label: 'Custom Webhooks' },
         ],
     },
     {
@@ -129,11 +133,14 @@ const PAGES: Record<string, React.ReactNode> = {
             <H1>Introduction to PingForge</H1>
             <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-6">Monitoring that actually works</p>
             <P>PingForge is an all-in-one monitoring platform designed for engineering teams that need reliability without complexity. It provides three core services that cover the entire health surface of your production systems.</P>
-            <div className="grid sm:grid-cols-3 gap-4 my-8">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 my-8">
                 {[
                     { icon: Activity, color: 'blue',    title: 'API Monitoring',      desc: 'Ping your endpoints every minute from our global network. Get alerted the instant something fails.' },
-                    { icon: Heart, color: 'pink',      title: 'Heartbeat Monitoring', desc: 'Ensure your cron jobs and scheduled tasks always run on time. Never miss a silent failure again.' },
-                    { icon: Lock, color: 'emerald',    title: 'SSL Monitoring',      desc: 'Never let an SSL certificate expire. Get proactive alerts 30, 15, and 7 days before expiry.' },
+                    { icon: Shield,   color: 'indigo',  title: 'TCP Port',            desc: 'Monitor database ports, SSH, or any network service. Ensure your infrastructure is reachable.' },
+                    { icon: Globe,    color: 'emerald', title: 'DNS Analysis',        desc: 'Track DNS record changes (A, CNAME, TXT) and detect hijacking or configuration drifts.' },
+                    { icon: Lock,     color: 'purple',  title: 'SSL Certificates',    desc: 'Never let an SSL certificate expire. Get proactive alerts 30, 15, and 7 days before expiry.' },
+                    { icon: Heart,    color: 'pink',    title: 'Heartbeats',          desc: 'Ensure your cron jobs and scheduled tasks always run on time. Never miss a silent failure again.' },
+                    { icon: Zap,      color: 'amber',   title: 'Domain Expiry',       desc: 'Track domain registration dates via WHOIS. Get alerted before your domain enters redemption.' },
                 ].map(({ icon: Icon, color, title, desc }) => (
                     <div key={title} className="bg-white/[0.02] border border-white/[0.05] rounded-[20px] p-5">
                         <div className={`w-10 h-10 rounded-xl mb-4 flex items-center justify-center bg-${color}-500/10 border border-${color}-500/20`}>
@@ -198,7 +205,7 @@ const PAGES: Record<string, React.ReactNode> = {
 
             <H2>Step 4 — Test the alert (optional)</H2>
             <P>To verify alerts are delivered, temporarily enter a wrong URL in your monitor. You should receive an alert email within 1–2 minutes.</P>
-            <DocAlert type="tip">Check your spam folder if the test alert does not arrive. Add alerts@monitorp.com to your allowlist to ensure delivery.</DocAlert>
+            <DocAlert type="tip">Check your spam folder if the test alert does not arrive. Add alerts@pingforge.com to your allowlist to ensure delivery.</DocAlert>
         </>
     ),
 
@@ -252,11 +259,58 @@ const PAGES: Record<string, React.ReactNode> = {
         </>
     ),
 
+    'tcp-monitors': (
+        <>
+            <H1>TCP Port Monitoring</H1>
+            <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-6">Infrastructure and network health</p>
+            <P>TCP Port monitors ensure that your low-level network services (Databases, SSH, SMTP, Redis) are reachable and accepting connections. Unlike API monitors, TCP monitors work at the transport layer, making them faster and versatile for non-web infrastructure.</P>
+            <H2>Configuration</H2>
+            <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl overflow-hidden my-4">
+                <table className="w-full text-sm">
+                    <thead className="bg-white/[0.03] border-b border-white/[0.04]">
+                        <tr>{['Option', 'Example', 'Description'].map(h => <th key={h} className="px-5 py-3 text-left text-[10px] font-black text-gray-600 uppercase tracking-widest">{h}</th>)}</tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.03]">
+                        {[
+                            ['Hostname', 'db.production.io', 'The IP address or domain name'],
+                            ['Port', '5432', 'The target port (e.g., 80, 443, 3306, 6379)'],
+                            ['Timeout', '5s', 'Max time allowed for a handshake'],
+                        ].map(([o, d, desc]) => (
+                            <tr key={o}>
+                                <td className="px-5 py-4 text-white font-black">{o}</td>
+                                <td className="px-5 py-4 text-gray-500 font-mono text-xs">{d}</td>
+                                <td className="px-5 py-4 text-gray-500">{desc}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            <DocAlert type="tip">Use TCP monitoring for your core database instances to detect network isolation issues before they impact your application heartbeat.</DocAlert>
+        </>
+    ),
+
+    'dns-monitors': (
+        <>
+            <H1>DNS Monitoring</H1>
+            <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-6">Drift detection and record integrity</p>
+            <P>DNS monitoring tracks your nameserver records and alerts you if they change. This is essential for detecting DNS hijacking, accidental deletions, or propagation issues during migrations.</P>
+            <H2>Baseline Comparison</H2>
+            <P>PingForge takes a snapshot of your DNS records when you create the monitor. Every check compares the current records against this baseline. If a mismatch is detected, you get an alert with a diff of the changes.</P>
+            <H2>Supported Record Types</H2>
+            <div className="flex flex-wrap gap-2 my-4">
+                {['A', 'AAAA', 'MX', 'CNAME', 'TXT', 'NS'].map(r => (
+                    <span key={r} className="px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs font-bold">{r}</span>
+                ))}
+            </div>
+            <DocAlert type="warn">Always update your baseline in the dashboard after performing a legitimate DNS change to avoid "drift" alerts.</DocAlert>
+        </>
+    ),
+
     'heartbeat-monitors': (
         <>
             <H1>Heartbeat Monitors</H1>
             <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-6">Passive monitoring for scheduled jobs</p>
-            <P>Heartbeat monitors are designed for cron jobs, background tasks, database backups, and any other scheduled process. Instead of MonitorP pinging you, your job sends a signal to MonitorP when it completes.</P>
+            <P>Heartbeat monitors are designed for cron jobs, background tasks, database backups, and any other scheduled process. Instead of PingForge pinging you, your job sends a signal to PingForge when it completes.</P>
             <H2>The Concept: Dead Man's Switch</H2>
             <P>If PingForge does not receive a check-in signal within the expected timeframe (plus a configurable grace period), it triggers an alert. Silence means failure.</P>
             <H2>Signal Types</H2>
@@ -299,21 +353,50 @@ const PAGES: Record<string, React.ReactNode> = {
         </>
     ),
 
+    'domain-expiry': (
+        <>
+            <H1>Domain Expiry Tracking</H1>
+            <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-6">WHOIS-based registration monitoring</p>
+            <P>Losing a domain to expiration can be catastrophic. PingForge monitors the global WHOIS database for your domain's registration status and alerting you before it's too late.</P>
+            <H2>Redemption Protection</H2>
+            <P>Our engine identifies domains entering the "Redemption Grace Period" and fires critical alerts. We check your domain registration daily to ensure you have months of lead time.</P>
+            <DocAlert type="info">Domain monitoring works across all major TLDs (.com, .net, .org, .io, .app, etc.) and uses direct WHOIS queries.</DocAlert>
+        </>
+    ),
+
     'email-alerts': (
         <>
-            <H1>Email Alerts (Soon)</H1>
-            <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-6">Stay informed when things go wrong</p>
-            <P>PingForge will send real-time email alerts when any monitored service transitions from UP to DOWN, and a recovery email when it comes back online.</P>
-            <DocAlert type="info">This feature is currently under development. Once active, a single DOWN alert will be sent per incident, and one recovery alert when the issue resolves.</DocAlert>
+            <H1>Email Alerts</H1>
+            <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-6">Standard incident notifications</p>
+            <P>PingForge sends immediate email notifications for every incident. Alerts include the monitor name, status, error reason, and a direct link to the incident report.</P>
+            <H2>Smart Throttling</H2>
+            <P>To prevent "alert fatigue," we group rapid status changes into a single incident thread. You'll receive one "DOWN" email and one "RECOVERED" email when the service is stable again.</P>
+        </>
+    ),
+
+    'multi-channel': (
+        <>
+            <H1>Slack & Discord Integration</H1>
+            <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-6">Real-time team collaboration</p>
+            <P>Connect PingForge to your team's communication tools. We support Incoming Webhooks for both Slack and Discord, providing rich, interactive messages.</P>
+            <H2>Rich Payloads</H2>
+            <P>Our multi-channel alerts aren't just text. They include color-coded status bars, monitor metadata (URL/Host/Port), and specific error details like DNS diffs or SSL expiry days.</P>
+            <DocAlert type="tip">You can assign multiple alert channels to a single monitor to ensure the right people are notified in the right place.</DocAlert>
         </>
     ),
 
     webhooks: (
         <>
-            <H1>Webhooks</H1>
-            <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-6">Coming soon</p>
-            <P>Webhook support will allow MonitorP to POST alert payloads to any URL, enabling integration with Slack, Discord, PagerDuty, and any custom alerting pipeline.</P>
-            <DocAlert type="warn">This feature is not yet available. Slack and Discord integrations are planned for the next major release.</DocAlert>
+            <H1>Custom Webhooks</H1>
+            <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-6">Build your own integrations</p>
+            <P>For advanced users, PingForge can POST a JSON payload to any URL you specify. This allows you to trigger PagerDuty, automated rollback scripts, or your own internal dashboards.</P>
+            <H2>Payload Structure</H2>
+            <CodeBlock lang="json" code={`{
+  "event": "monitor.down",
+  "displayName": "🚨 Alert: API is DOWN",
+  "monitor": { "id": "...", "name": "API", "type": "api" },
+  "incident": { "reason": "Timeout after 10s", "startedAt": "..." }
+}`} />
         </>
     ),
 

@@ -1,4 +1,8 @@
+const cron = require('node-cron');
+const ApiKey = require('../models/ApiKey');
+const User = require('../models/User');
 const { runWithLimit } = require('../utils/async');
+const { isInMaintenance } = require('../utils/maintenanceCheck');
 
 const startApiKeyChecker = (io) => {
     // Run daily at midnight

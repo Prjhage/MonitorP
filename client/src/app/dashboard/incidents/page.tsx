@@ -4,12 +4,40 @@ import React, { useState, useEffect } from 'react';
 import api from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { Activity, Clock, Filter, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useSocket } from '@/context/SocketContext';
+import { useToast } from '@/context/ToastContext';
 import { format } from 'date-fns';
 
 export default function IncidentsPage() {
   const { user } = useAuth();
+  const socket = useSocket();
+  const { showToast } = useToast();
   const [incidents, setIncidents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!socket) return;
+    
+    const handleIncidentOpened = (incident: any) => {
+      setIncidents(prev => [incident, ...prev]);
+      showToast('error', `🚨 ${incident.monitorName} just went DOWN`);
+    };
+
+    const handleIncidentResolved = (incident: any) => {
+      setIncidents(prev => prev.map(i =>
+        i._id === incident._id ? { ...i, ...incident } : i
+      ));
+      showToast('success', `✅ ${incident.monitorName} recovered`);
+    };
+
+    socket.on('incident-opened', handleIncidentOpened);
+    socket.on('incident-resolved', handleIncidentResolved);
+
+    return () => {
+      socket.off('incident-opened', handleIncidentOpened);
+      socket.off('incident-resolved', handleIncidentResolved);
+    };
+  }, [socket, showToast]);
 
   useEffect(() => {
     if (user?.token) {

@@ -1,5 +1,5 @@
 import React from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -14,15 +14,31 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MonitorP | API & Heartbeat Monitoring",
-  description: "The world's most reliable API monitoring platform for modern engineering teams.",
+  title: "PingForge | API & Uptime Monitoring",
+  description: "The world's most reliable API monitoring platform — real-time uptime tracking, heartbeats, SSL, DNS and more.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "PingForge",
+  },
+  icons: {
+    apple: "/icon-192.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#030303",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 import { AuthProvider } from "@/context/AuthContext";
+import { SocketProvider } from "@/context/SocketContext";
 import { CacheProvider } from "@/context/CacheContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { ConfirmProvider } from "@/context/ConfirmContext";
-import DesktopOnly from "@/components/layout/DesktopOnly";
 
 export default function RootLayout({
   children,
@@ -36,17 +52,19 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
-          <CacheProvider>
-            <ToastProvider>
-              <ConfirmProvider>
-                <DesktopOnly />
-                <div className="mesh-bg" />
-                {children}
-              </ConfirmProvider>
-            </ToastProvider>
-          </CacheProvider>
+          <SocketProvider>
+            <CacheProvider>
+              <ToastProvider>
+                <ConfirmProvider>
+                  <div className="mesh-bg" />
+                  {children}
+                </ConfirmProvider>
+              </ToastProvider>
+            </CacheProvider>
+          </SocketProvider>
         </AuthProvider>
       </body>
     </html>
   );
 }
+

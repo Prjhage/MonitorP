@@ -92,7 +92,7 @@ export default function DesktopOnly() {
 
                     {/* Description */}
                     <p style={{ color: '#9ca3af', fontSize: '14px', lineHeight: 1.6, marginBottom: '24px' }}>
-                        MonitorP is a professional engineering suite built for high-resolution displays. Please open it on a{' '}
+                        PingForge is a professional engineering suite built for high-resolution displays. Please open it on a{' '}
                         <span style={{ color: '#60a5fa', fontWeight: 500 }}>Desktop or Laptop</span>.
                     </p>
 
@@ -124,7 +124,7 @@ export default function DesktopOnly() {
                     {/* Footer */}
                     <div style={{ marginTop: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                         <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#374151' }} />
-                        <span style={{ fontSize: '12px', color: '#4b5563' }}>MonitorP · Desktop Platform</span>
+                        <span style={{ fontSize: '12px', color: '#4b5563' }}>PingForge · Desktop Platform</span>
                         <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#374151' }} />
                     </div>
                 </div>

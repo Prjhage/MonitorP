@@ -8,44 +8,44 @@ import { useAuth } from '@/context/AuthContext';
 
 const faqs = [
     {
-        question: "How does PingForge work?",
-        answer: "PingForge works by periodically sending pings to your APIs and websites from multiple global regions. We measure response times, status codes, and verify response bodies against your custom assertions. If we detect a failure, we immediately notify you via your chosen alert channels.",
-        icon: <Globe className="w-5 h-5 text-blue-500" />
+        question: "What types of monitors do you support?",
+        answer: "We support six core monitoring types: API (HTTP/HTTPS), TCP Port (Infrastructure), DNS (Record Drift), SSL Certificates, Heartbeats (Cron Jobs), and Domain Expiry (WHOIS). This covers your entire surface area from low-level networking to application logic.",
+        icon: <Activity className="w-5 h-5 text-blue-500" />
     },
     {
-        question: "Is it feasible for large-scale enterprise use?",
-        answer: "Absolutely. PingForge is built on a scalable, cloud-native architecture capable of handling thousands of monitors per account. We offer regional failover, high-frequency pings (down to 30 seconds), and team collaboration features designed for production-grade engineering environments.",
-        icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />
+        question: "How does PingForge work?",
+        answer: "PingForge periodically evaluates your services from multiple global regions. We measure response times, status codes, and verify data integrity. If we detect a failure, we immediately notify you via Slack, Discord, MS Teams, Email, or Custom Webhooks.",
+        icon: <Globe className="w-5 h-5 text-indigo-500" />
     },
     {
         question: "What is Heartbeat monitoring?",
-        answer: "Heartbeat monitoring is for internal tasks like cron jobs or background scripts that can't be reached by external pings. Instead, your job sends a 'heartbeat' signal to PingForge when it finishes. If we don't hear from your job within the expected timeframe, we alert you immediately.",
-        icon: <Heart className="w-5 h-5 text-pink-500" />
+        answer: "Heartbeat monitoring is for internal tasks like cron jobs or background scripts that can't be reached by external pings. Your job sends a signal to PingForge when it finishes. If we don't hear from your job within the expected timeframe, we alert you immediately.",
+        icon: <Heart className="w-5 h-5 text-rose-500" />
     },
     {
-        question: "How reliable are the alerts?",
-        answer: "Our alerting engine uses staggered verification. If a monitor fails, we re-verify from another region before sounding the alarm. This prevents 'false positives' while ensuring you're the first to know the exact second a real incident occurs.",
+        question: "Can I monitor internal infrastructure like Databases?",
+        answer: "Yes! Our TCP Port monitors allow you to watch any network service (PostgreSQL, MySQL, Redis, SSH) by checking if the port is open and accepting handshakes. It's the perfect way to monitor internal tools that don't have a web interface.",
+        icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />
+    },
+    {
+        question: "How does DNS monitoring work?",
+        answer: "We take a 'baseline' of your DNS records (A, MX, TXT, etc.). If your nameserver returns anything that differs from your baseline, we fire an alert. This protects you against DNS hijacking or accidental configuration drift.",
+        icon: <Globe className="w-5 h-5 text-sky-500" />
+    },
+    {
+        question: "Where can I receive alerts?",
+        answer: "You can receive real-time alerts on Slack, Discord, Microsoft Teams, and Email. We also support custom Webhooks, allowing you to trigger PagerDuty or run automated recovery scripts the second a down-event is detected.",
         icon: <Bell className="w-5 h-5 text-amber-500" />
     },
     {
-        question: "Can I customize my status pages?",
-        answer: "Yes, every MonitorP account comes with public status pages. You can customize them with your company logo, brand colors, and choose exactly which monitors to display to your customers to build trust through transparency.",
-        icon: <Zap className="w-5 h-5 text-purple-500" />
-    },
-    {
         question: "How does SSL monitoring work?",
-        answer: "MonitorP automatically tracks your SSL certificates, checking for expiry and configuration health. You'll receive alerts 30, 14, and 7 days before a certificate expires, giving you plenty of time to renew before your users see any security warnings.",
-        icon: <Lock className="w-5 h-5 text-emerald-500" />
+        answer: "PingForge automatically tracks your SSL certificates, checking for expiry and configuration health. You'll receive alerts 30, 14, and 7 days before a certificate expires, giving you plenty of time to renew.",
+        icon: <Lock className="w-5 h-5 text-purple-500" />
     },
     {
-        question: "What is API Key Protection?",
-        answer: "Our security engine proactively scans public GitHub repositories for leaked credentials or API keys associated with your services. If a leak is detected, we alert you instantly, allowing you to rotate keys before they can be exploited by malicious actors.",
-        icon: <Shield className="w-5 h-5 text-purple-500" />
-    },
-    {
-        question: "How secure is my data?",
-        answer: "Security is our top priority. All sensitive data like custom headers or auth tokens are encrypted at rest. Our monitoring infrastructure is isolated, and we never touch your actual production data—only the endpoints you tell us to watch.",
-        icon: <ShieldCheck className="w-5 h-5 text-indigo-500" />
+        question: "Is it secure for large-scale enterprise use?",
+        answer: "Absolutely. PingForge is built on a scalable architecture. All sensitive data like custom headers or webhook URLs are encrypted at rest using AES-256-CBC. Our monitoring infrastructure is isolated to ensure maximum security.",
+        icon: <Shield className="w-5 h-5 text-blue-600" />
     }
 ];
 
@@ -105,7 +105,7 @@ export default function FAQPage() {
                                     <Shield className="text-white w-6 h-6 drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]" />
                                 </div>
                             </div>
-                            <span className="text-xl font-black tracking-tighter text-white group-hover:text-blue-400 transition-colors">Monitor<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">P</span></span>
+                            <span className="text-xl font-black tracking-tighter text-white group-hover:text-blue-400 transition-colors">Ping<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Forge</span></span>
                         </Link>
 
                         <div className="flex items-center gap-6">
@@ -138,7 +138,7 @@ export default function FAQPage() {
                         </div>
                         <h1 className="text-5xl font-black text-white mb-6 tracking-tight">Frequently Asked <span className="gradient-text">Questions</span></h1>
                         <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-                            Everything you need to know about MonitorP. Can't find what you're looking for? Reach out to our team.
+                            Everything you need to know about PingForge. Can't find what you're looking for? Reach out to our team.
                         </p>
                     </motion.div>
 
@@ -207,7 +207,7 @@ export default function FAQPage() {
                     <div className="max-w-7xl mx-auto flex flex-col items-center">
                         <div className="flex items-center gap-3 mb-8">
                             <Shield className="text-blue-500 w-6 h-6" />
-                            <span className="text-lg font-black tracking-tighter text-white">MonitorP</span>
+                            <span className="text-lg font-black tracking-tighter text-white">PingForge</span>
                         </div>
                         <div className="flex items-center gap-8 mb-8 text-sm text-gray-500 font-medium">
                             <Link href="/" className="hover:text-white transition-colors">Home</Link>
@@ -215,7 +215,7 @@ export default function FAQPage() {
                             <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
                         </div>
                         <div className="text-sm text-gray-500">
-                            &copy; 2026 MonitorP SaaS. All rights reserved.
+                            &copy; 2026 PingForge SaaS. All rights reserved.
                         </div>
                     </div>
                 </footer>

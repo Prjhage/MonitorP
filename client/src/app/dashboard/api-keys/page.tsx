@@ -34,7 +34,7 @@ const ENV_COLORS: Record<string, string> = {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ApiKeysPage() {
-    const { user } = useAuth();
+    const { user, isAtLeast } = useAuth();
     const { showToast } = useToast();
     const { confirm } = useConfirm();
     
@@ -117,6 +117,16 @@ export default function ApiKeysPage() {
     const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
     const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: 'spring' as const, damping: 25, stiffness: 100 } } };
 
+    if (!isAtLeast('member')) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full py-20">
+                <ShieldAlert className="w-16 h-16 text-red-500 mb-6 opacity-20" />
+                <h2 className="text-2xl font-black text-white mb-2">Restricted Access</h2>
+                <p className="text-gray-500 max-w-sm text-center">Viewer roles are restricted from accessing the Secret Vault.</p>
+            </div>
+        );
+    }
+
     return (
         <motion.div initial="hidden" animate="show" variants={containerVariants} className="p-10">
             
@@ -130,9 +140,11 @@ export default function ApiKeysPage() {
                         Centralize tracking for all your external service secrets. We'll alert you before they expire to prevent production downtime.
                     </p>
                 </div>
-                <button id="tour-add-key" onClick={() => setIsAdding(true)} className="premium-button btn-glow-blue flex items-center gap-2 px-6">
-                    <Plus className="w-5 h-5" /> Track New Key
-                </button>
+                {isAtLeast('admin') && (
+                    <button id="tour-add-key" onClick={() => setIsAdding(true)} className="premium-button btn-glow-blue flex items-center gap-2 px-6">
+                        <Plus className="w-5 h-5" /> Track New Key
+                    </button>
+                )}
             </motion.header>
 
             {/* ─── Keys Grid ───────────────────────────────────────────── */}
@@ -219,12 +231,14 @@ export default function ApiKeysPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1">
-                                                <button 
-                                                    onClick={() => handleDelete(key._id)}
-                                                    className="p-2.5 rounded-xl text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+                                                {isAtLeast('admin') && (
+                                                    <button 
+                                                        onClick={() => handleDelete(key._id)}
+                                                        className="p-2.5 rounded-xl text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

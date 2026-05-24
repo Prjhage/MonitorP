@@ -5,6 +5,9 @@ const PingLog = require('../models/PingLog');
 const Incident = require('../models/Incident');
 const REGIONS = require('../config/regions');
 const { protect } = require('../middleware/auth');
+const { getOrgFilter, getOrgFields, canModify } = require('../utils/orgFilter');
+const { logAudit } = require('../utils/auditLogger');
+const { requireMinRole } = require('../middleware/rbac');
 
 // @desc    Test route to verify apiRoutes are reachable
 // @route   GET /api/apis/test-ping
@@ -29,10 +32,36 @@ router.get('/diag/:id', async (req, res) => {
 
 // @desc    Get all active APIs for logged in user
 // @route   GET /api/apis
-router.get('/', protect, async (req, res) => {
+router.get('/', protect, requireMinRole('viewer'), async (req, res) => {
     try {
-        const apis = await API.find({ userId: req.user._id });
-        res.json(apis);
+        const apis = await API.find(getOrgFilter(req)).lean();
+        
+        // Fetch active maintenance windows for this org/user
+        const now = new Date();
+        const MaintenanceWindow = require('../models/MaintenanceWindow');
+        const windows = await MaintenanceWindow.find({
+            isActive: true,
+            startTime: { $lte: now },
+            endTime: { $gte: now },
+            ...(req.user.orgId ? { orgId: req.user.orgId } : { userId: req.user._id })
+        }).lean();
+
+        const isOrgWide = windows.some(w => w.affectedMonitors === 'all');
+        const affectedIds = new Set();
+        if (!isOrgWide) {
+            windows.forEach(w => {
+                if (Array.isArray(w.affectedMonitors)) {
+                    w.affectedMonitors.forEach(id => affectedIds.add(id.toString()));
+                }
+            });
+        }
+
+        const apisWithMaintenance = apis.map(api => ({
+            ...api,
+            inMaintenance: isOrgWide || affectedIds.has(api._id.toString())
+        }));
+
+        res.json(apisWithMaintenance);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -40,12 +69,12 @@ router.get('/', protect, async (req, res) => {
 
 // @desc    Create new API to monitor
 // @route   POST /api/apis
-router.post('/', protect, async (req, res) => {
-    const { name, url, method, expectedStatus, interval, timeout, alertEmail, headers, queryParams, body, assertions } = req.body;
+router.post('/', protect, requireMinRole('admin'), async (req, res) => {
+    const { name, url, method, expectedStatus, interval, timeout, alertEmail, alertChannels, headers, queryParams, body, assertions } = req.body;
 
     try {
         const api = await API.create({
-            userId: req.user._id,
+            ...getOrgFields(req),
             name,
             url,
             method,
@@ -53,12 +82,14 @@ router.post('/', protect, async (req, res) => {
             interval,
             timeout,
             alertEmail,
+            alertChannels: alertChannels || [],
             headers: headers || [],
             queryParams: queryParams || [],
             body: body || '',
             assertions: assertions || [],
         });
 
+        await logAudit(req, 'created', 'api', api._id, api.name);
         res.status(201).json(api);
     } catch (error) {
         console.error('API Create Error:', error);
@@ -69,7 +100,7 @@ router.post('/', protect, async (req, res) => {
 // @desc    Get all incidents for current user
 // @route   GET /api/apis/incidents/all
 // NOTE: This MUST be before any /:id routes to avoid Express treating "incidents" as an id
-router.get('/incidents/all', protect, async (req, res) => {
+router.get('/incidents/all', protect, requireMinRole('viewer'), async (req, res) => {
     try {
         const incidents = await Incident.find({ userId: req.user._id })
             .populate('apiId', 'name')
@@ -83,14 +114,14 @@ router.get('/incidents/all', protect, async (req, res) => {
 
 // @desc    Update API config (name, url, method, headers, body, assertions, etc.)
 // @route   PATCH /api/apis/:id
-router.patch('/:id', protect, async (req, res) => {
+router.patch('/:id', protect, requireMinRole('admin'), async (req, res) => {
     try {
         const api = await API.findById(req.params.id);
-        if (!api || api.userId.toString() !== req.user._id.toString()) {
+        if (!api || !canModify(api, req)) {
             return res.status(404).json({ message: 'API not found' });
         }
 
-        const allowedFields = ['name', 'url', 'method', 'expectedStatus', 'interval', 'timeout', 'alertEmail', 'headers', 'queryParams', 'body', 'assertions'];
+        const allowedFields = ['name', 'url', 'method', 'expectedStatus', 'interval', 'timeout', 'alertEmail', 'alertChannels', 'headers', 'queryParams', 'body', 'assertions'];
         for (const field of allowedFields) {
             if (req.body[field] !== undefined) {
                 api[field] = req.body[field];
@@ -107,11 +138,11 @@ router.patch('/:id', protect, async (req, res) => {
 
 // @desc    Get advanced performance analytics (P50, P95, P99, Error Rate, Throughput, Apdex)
 // @route   GET /api/apis/:id/advanced-stats
-router.get('/:id/advanced-stats', protect, async (req, res) => {
+router.get('/:id/advanced-stats', protect, requireMinRole('viewer'), async (req, res) => {
     console.log(`[DEBUG] Advanced Stats requested for ID: ${req.params.id}`);
     try {
         const api = await API.findById(req.params.id).lean();
-        if (!api || api.userId.toString() !== req.user._id.toString()) {
+        if (!api || !canModify(api, req)) {
             console.log(`[DEBUG] API not found or mismatch: ${req.params.id}`);
             return res.status(404).json({ message: 'API not found' });
         }
@@ -200,10 +231,10 @@ router.get('/:id/advanced-stats', protect, async (req, res) => {
 
 // @desc    Get API stats (uptime, logs, incidents)
 // @route   GET /api/apis/:id/stats
-router.get('/:id/stats', protect, async (req, res) => {
+router.get('/:id/stats', protect, requireMinRole('viewer'), async (req, res) => {
     try {
         const api = await API.findById(req.params.id);
-        if (!api || api.userId.toString() !== req.user._id.toString()) {
+        if (!api || !canModify(api, req)) {
             return res.status(404).json({ message: 'API not found' });
         }
 
@@ -243,10 +274,10 @@ router.get('/:id/stats', protect, async (req, res) => {
 
 // @desc    Toggle API active status (Pause/Resume)
 // @route   PATCH /api/apis/:id/toggle
-router.patch('/:id/toggle', protect, async (req, res) => {
+router.patch('/:id/toggle', protect, requireMinRole('admin'), async (req, res) => {
     try {
         const api = await API.findById(req.params.id);
-        if (!api || api.userId.toString() !== req.user._id.toString()) {
+        if (!api || !canModify(api, req)) {
             return res.status(404).json({ message: 'API not found' });
         }
 
@@ -265,10 +296,10 @@ router.patch('/:id/toggle', protect, async (req, res) => {
 
 // @desc    Delete API
 // @route   DELETE /api/apis/:id
-router.delete('/:id', protect, async (req, res) => {
+router.delete('/:id', protect, requireMinRole('admin'), async (req, res) => {
     try {
         const api = await API.findById(req.params.id);
-        if (!api || api.userId.toString() !== req.user._id.toString()) {
+        if (!api || !canModify(api, req)) {
             return res.status(404).json({ message: 'API not found' });
         }
 

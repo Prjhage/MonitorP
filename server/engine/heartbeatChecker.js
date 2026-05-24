@@ -1,4 +1,8 @@
+const cron = require('node-cron');
+const Heartbeat = require('../models/Heartbeat');
+const { triggerHeartbeatAlert } = require('../utils/heartbeatAlerts');
 const { runWithLimit } = require('../utils/async');
+const { isInMaintenance } = require('../utils/maintenanceCheck');
 
 const startHeartbeatChecker = (io) => {
     // Run every minute
@@ -25,6 +29,11 @@ const startHeartbeatChecker = (io) => {
                     deadline.setMinutes(deadline.getMinutes() + (heartbeat.gracePeriod || 30));
 
                     if (now > deadline) {
+                        const skip = await isInMaintenance(heartbeat._id, heartbeat.orgId, heartbeat.userId);
+                        if (skip) {
+                            console.log(`[Heartbeat] Maintenance window active — skipping alert for ${heartbeat.name}`);
+                            return;
+                        }
                         return triggerHeartbeatAlert(
                             heartbeat,
                             now,
@@ -59,6 +68,11 @@ const startHeartbeatChecker = (io) => {
 
                     if (now > limitTime) {
                         const diffMins = Math.round((now - startTimeHr) / 60000);
+                        const skip = await isInMaintenance(heartbeat._id, heartbeat.orgId, heartbeat.userId);
+                        if (skip) {
+                            console.log(`[Heartbeat] Maintenance window active — skipping TIMEOUT alert for ${heartbeat.name}`);
+                            return;
+                        }
                         return triggerHeartbeatAlert(
                             heartbeat,
                             now,

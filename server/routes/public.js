@@ -7,6 +7,7 @@ const Incident = require('../models/Incident');
 const Heartbeat = require('../models/Heartbeat');
 const HeartbeatIncident = require('../models/HeartbeatIncident');
 const SslMonitor = require('../models/SslMonitor');
+const MaintenanceWindow = require('../models/MaintenanceWindow');
 
 // @desc    Get public status for a company (enhanced with Heartbeat & SSL)
 // @route   GET /api/public/status/:companyName
@@ -43,6 +44,13 @@ router.get('/status/:companyName', async (req, res) => {
             status: 'RESOLVED',
             endTime: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
         }).populate('apiId', 'name').sort({ endTime: -1 }).limit(10);
+        
+        // 2.5 Fetch upcoming maintenance windows
+        const maintenanceWindows = await MaintenanceWindow.find({
+            orgId: user.orgId || user._id, // Fallback for legacy
+            endTime: { $gte: new Date() },
+            isActive: true
+        }).sort({ startTime: 1 }).limit(3);
 
         // 3. Build 30-day uptime calendar per API
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -101,6 +109,7 @@ router.get('/status/:companyName', async (req, res) => {
             sslMonitors,
             activeIncidents: [...activeApiIncidents, ...activeHbIncidents],
             recentIncidents,
+            maintenanceWindows,
             uptimeCalendar,
             overallHealth,
         });

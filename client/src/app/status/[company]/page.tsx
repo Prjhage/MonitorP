@@ -4,11 +4,93 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
-import { motion } from 'framer-motion';
-import { Shield, CheckCircle2, AlertCircle, Clock, ExternalLink, TrendingUp, Heart, Lock, ShieldCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Shield, CheckCircle2, AlertCircle, Clock, ExternalLink, 
+  TrendingUp, Heart, Lock, ShieldCheck, Mail, Bell, 
+  Wrench, ChevronRight, Check, Loader2, Info, Calendar
+} from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+// ─── Subscriber Widget ────────────────────────────────────────────────────────
+function SubscriberWidget({ companyName }: { companyName: string }) {
+    const [email, setEmail] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [subscribed, setSubscribed] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSubscribe = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        try {
+            await axios.post(`${API_URL}/status-subscribers/subscribe`, {
+                companyName,
+                email
+            });
+            setSubscribed(true);
+            setEmail('');
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to subscribe. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="bg-gradient-to-br from-blue-600/10 to-indigo-600/5 border border-blue-500/20 rounded-[32px] p-8 mb-12 relative overflow-hidden">
+            {/* Glow */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/20 blur-[80px] rounded-full pointer-events-none" />
+            
+            <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                        <Bell className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-black text-white tracking-tight">Stay Informed</h3>
+                        <p className="text-gray-400 text-sm font-medium">Get email notifications for outages and maintenance.</p>
+                    </div>
+                </div>
+
+                <AnimatePresence mode="wait">
+                    {subscribed ? (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                            className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3"
+                        >
+                            <Check className="w-5 h-5 text-emerald-400" />
+                            <span className="text-emerald-400 font-bold text-sm">You've been subscribed! Please check your inbox.</span>
+                        </motion.div>
+                    ) : (
+                        <motion.form 
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3"
+                        >
+                            <div className="flex-1 relative">
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                <input 
+                                    type="email" required placeholder="your@email.com"
+                                    value={email} onChange={e => setEmail(e.target.value)}
+                                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-2xl pl-12 pr-4 py-3.5 text-white outline-none focus:border-blue-500/50 transition-all"
+                                />
+                            </div>
+                            <button 
+                                type="submit" disabled={loading}
+                                className="bg-blue-600 hover:bg-blue-500 text-white font-black px-8 py-3.5 rounded-2xl transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Subscribe'}
+                            </button>
+                        </motion.form>
+                    )}
+                </AnimatePresence>
+                {error && <p className="text-red-400 text-xs font-bold mt-3 ml-1">{error}</p>}
+            </div>
+        </div>
+    );
+}
 
 // ─── Uptime Calendar (30 squares) ─────────────────────────────────────────────
 function UptimeCalendar({ calendar }: { calendar: { date: string; uptime: number | null }[] }) {
@@ -50,20 +132,6 @@ function UptimeCalendar({ calendar }: { calendar: { date: string; uptime: number
                     <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#111]" />
                 </div>
             )}
-            <div className="flex items-center gap-4 mt-3 justify-end">
-                <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                    <div className="w-3 h-3 rounded-[2px] bg-white/[0.05] border border-white/[0.04]" /> No data
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                    <div className="w-3 h-3 rounded-[2px] bg-amber-500/80" /> Degraded
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                    <div className="w-3 h-3 rounded-[2px] bg-red-600" /> Outage
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                    <div className="w-3 h-3 rounded-[2px] bg-emerald-500" /> Operational
-                </div>
-            </div>
         </div>
     );
 }
@@ -73,10 +141,10 @@ function StatusIndicator({ status, labelUp = "Operational", labelDown = "Outage"
     const isUp = status === 'UP' || status === 'VALID';
     return (
         <div className="flex items-center gap-2">
-            <span className={`text-sm font-semibold ${isUp ? 'text-emerald-500' : 'text-red-500'}`}>
+            <span className={`text-xs font-black uppercase tracking-widest ${isUp ? 'text-emerald-500' : 'text-red-500'}`}>
                 {isUp ? labelUp : labelDown}
             </span>
-            <div className={`w-3 h-3 rounded-full ${isUp ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+            <div className={`w-2.5 h-2.5 rounded-full ${isUp ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse'}`} />
         </div>
     );
 }
@@ -179,6 +247,25 @@ export default function PublicStatusPage() {
                     </div>
                 </div>
 
+                {/* ─── Subscription Widget ──────────────────────────────────── */}
+                <SubscriberWidget companyName={companyName} />
+
+                {/* ─── Maintenance Banner ───────────────────────────────────── */}
+                {data.maintenanceWindows?.some((w: any) => {
+                    const now = new Date();
+                    return now >= new Date(w.startTime) && now <= new Date(w.endTime);
+                }) && (
+                    <div className="mb-12 bg-amber-500/10 border border-amber-500/30 rounded-[28px] p-6 flex items-center gap-5">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                            <Wrench className="w-6 h-6 text-amber-500" />
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="text-amber-500 font-black text-sm uppercase tracking-wider mb-0.5">Scheduled Maintenance Live</h4>
+                            <p className="text-gray-400 text-sm font-medium">We are currently performing system updates. Some metrics may be temporarily delayed.</p>
+                        </div>
+                    </div>
+                )}
+
                 {/* ─── API Status ─────────────────────────────────────────── */}
                 <div className="mb-12">
                     <div className="flex items-center gap-3 mb-6 px-2">
@@ -203,6 +290,36 @@ export default function PublicStatusPage() {
                         })}
                     </div>
                 </div>
+
+                {/* ─── Maintenance Windows ──────────────────────────────────── */}
+                {data.maintenanceWindows?.length > 0 && (
+                    <div className="mb-12">
+                        <div className="flex items-center gap-3 mb-6 px-2">
+                            <Calendar className="w-5 h-5 text-amber-500" />
+                            <h2 className="text-xl font-black text-white uppercase tracking-wider">Upcoming Maintenance</h2>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4">
+                            {data.maintenanceWindows.map((w: any) => (
+                                <div key={w._id} className="bg-white/[0.02] border border-white/[0.05] rounded-[24px] p-6 flex items-center justify-between">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                                            <Wrench className="w-5 h-5 text-gray-500" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-white font-black">{w.name}</h3>
+                                            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">
+                                                {format(new Date(w.startTime), 'MMM d, h:mm aa')} — {format(new Date(w.endTime), 'h:mm aa')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                                        Scheduled
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* ─── Heartbeat Section ──────────────────────────────────── */}
                 {data.heartbeats?.length > 0 && (
@@ -290,34 +407,6 @@ export default function PublicStatusPage() {
                     </div>
                 )}
 
-                {/* ─── Incident History ──────────────────────────────────────── */}
-                <div>
-                    <h2 className="text-xl font-black text-white mb-6 uppercase tracking-wider px-2">Incident History (7d)</h2>
-                    <div className="space-y-3">
-                        {data.recentIncidents.length === 0 ? (
-                            <div className="p-12 text-center border-2 border-dashed border-white/[0.03] rounded-[32px]">
-                                <p className="text-gray-600 font-bold italic">No incidents reported in the last 7 days.</p>
-                            </div>
-                        ) : (
-                            data.recentIncidents.map((incident: any) => (
-                                <div key={incident._id} className="bg-white/[0.02] border border-white/[0.05] rounded-[24px] p-6 flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex items-center justify-center">
-                                            <CheckCircle2 className="w-5 h-5 text-gray-500" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-white font-black">{incident.apiId?.name || incident.heartbeatId?.name} Outage</h3>
-                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
-                                                Resolved {format(new Date(incident.endTime), 'MMM d')} • {incident.duration} min duration
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-
                 {/* ─── Footer ───────────────────────────────────────────────── */}
                 <footer className="mt-28 py-12 border-t border-white/[0.05] flex flex-col items-center">
                     <p className="text-gray-600 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Powered by</p>
@@ -325,7 +414,7 @@ export default function PublicStatusPage() {
                         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                             <Shield className="text-white w-5 h-5" />
                         </div>
-                        <span className="text-lg font-black text-white tracking-tighter">Monitor<span className="text-blue-500">P</span></span>
+                        <span className="text-lg font-black text-white tracking-tighter">Ping<span className="text-blue-500">Forge</span></span>
                     </Link>
                 </footer>
             </div>

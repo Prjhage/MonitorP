@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Clock, Globe, ArrowUpRight, Zap, Play, Pause } from 'lucide-react';
+import { Heart, Clock, Globe, ArrowUpRight, Zap, Play, Pause, Trash2, Wrench } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useCache } from '@/context/CacheContext';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface HeartbeatCardProps {
     heartbeat: {
@@ -23,13 +24,17 @@ interface HeartbeatCardProps {
         currentJobStartedAt?: string;
         maxDuration?: number;
         maxDurationUnit?: string;
+        inMaintenance?: boolean;
     };
     onClick: () => void;
+    onTogglePause?: (e: React.MouseEvent) => void;
+    onDelete?: (e: React.MouseEvent) => void;
 }
 
-const HeartbeatCard = React.memo(function HeartbeatCard({ heartbeat, onClick }: HeartbeatCardProps) {
+const HeartbeatCard = React.memo(function HeartbeatCard({ heartbeat, onClick, onTogglePause, onDelete }: HeartbeatCardProps) {
     const { toggleHeartbeat } = useCache();
     const { showToast } = useToast();
+    const { isAtLeast } = useAuth();
     const isUp = heartbeat.status === 'UP' && !heartbeat.isPaused;
     const isDown = heartbeat.status === 'DOWN' && !heartbeat.isPaused;
     const isRunning = heartbeat.status === 'RUNNING' && !heartbeat.isPaused;
@@ -38,11 +43,22 @@ const HeartbeatCard = React.memo(function HeartbeatCard({ heartbeat, onClick }: 
 
     const handleToggle = async (e: React.MouseEvent) => {
         e.stopPropagation();
+        if (onTogglePause) {
+            onTogglePause(e);
+            return;
+        }
         try {
             await toggleHeartbeat(heartbeat._id);
             showToast(heartbeat.isPaused ? "Heartbeat Resumed" : "Heartbeat Paused", "success");
         } catch (error) {
             showToast("Failed to update status", "error");
+        }
+    };
+
+    const handleDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (onDelete) {
+            onDelete(e);
         }
     };
 
@@ -109,6 +125,11 @@ const HeartbeatCard = React.memo(function HeartbeatCard({ heartbeat, onClick }: 
                                 <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-${statusColor}-500/10 border border-${statusColor}-500/20 ${textColors[statusColor]}`}>
                                     {isPaused ? 'Paused' : heartbeat.status}
                                 </span>
+                                {heartbeat.inMaintenance && (
+                                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-1">
+                                        <Wrench className="w-2.5 h-2.5" /> Maintenance
+                                    </span>
+                                )}
                                 {isRunning && (
                                     <span className="text-[9px] font-bold text-amber-500/80 animate-pulse">
                                         RUNNING...
@@ -119,18 +140,32 @@ const HeartbeatCard = React.memo(function HeartbeatCard({ heartbeat, onClick }: 
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleToggle}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isPaused
-                                ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20'
-                                : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/5'
-                                }`}
-                            title={isPaused ? "Resume Monitoring" : "Pause Monitoring"}
-                        >
-                            {isPaused ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4" />}
-                        </button>
-                        <div className="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-white/10 transition-all group-hover:rotate-45">
-                            <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
+                        {isAtLeast('admin') && (
+                            <>
+                                <button
+                                    onClick={handleToggle}
+                                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all border ${
+                                        isPaused
+                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
+                                            : 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20'
+                                    }`}
+                                    title={isPaused ? "Resume Monitoring" : "Pause Monitoring"}
+                                >
+                                    {isPaused ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4" />}
+                                </button>
+                                {onDelete && (
+                                    <button
+                                        onClick={handleDelete}
+                                        className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500/20 transition-all"
+                                        title="Delete"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </>
+                        )}
+                        <div className="w-9 h-9 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-white/10 transition-all group-hover:rotate-45">
+                            <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
                         </div>
                     </div>
                 </div>

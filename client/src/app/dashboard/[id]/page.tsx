@@ -9,8 +9,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft, Activity, Clock, Globe, Shield,
     AlertCircle, Database, Trash2, Play, Pause,
-    CheckCircle2, XCircle, Pencil, X, Plus, Save, BarChart3
+    CheckCircle2, XCircle, Pencil, X, Plus, Save, BarChart3, BellDot, History, ExternalLink, Mail, MessageSquare, Webhook
 } from 'lucide-react';
+import AlertChannelSelector from '@/components/alerts/AlertChannelSelector';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -75,7 +76,7 @@ function KVEditor({ label, pairs, onChange }: { label: string; pairs: KVPair[]; 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DetailPage() {
     const params = useParams();
-    const { user } = useAuth();
+    const { user, isAtLeast } = useAuth();
     const router = useRouter();
     const { toggleApi, deleteApi } = useCache();
     const [data, setData] = useState<any>(null);
@@ -88,18 +89,33 @@ export default function DetailPage() {
     const [editForm, setEditForm] = useState<any>(null);
     const [saving, setSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
-    const [editTab, setEditTab] = useState<'basic' | 'advanced'>('basic');
+    const [editTab, setEditTab] = useState<'basic' | 'advanced' | 'notifications'>('basic');
 
     // Advanced Stats state
     const [advancedStats, setAdvancedStats] = useState<any>(null);
     const [loadingAdvanced, setLoadingAdvanced] = useState(true);
+    const [alertLogs, setAlertLogs] = useState<any[]>([]);
+    const [loadingAlertLogs, setLoadingAlertLogs] = useState(false);
 
     useEffect(() => {
         if (params.id && user?.token) {
             fetchDetails();
             fetchAdvancedStats();
+            fetchAlertLogs();
         }
     }, [params.id, user?.token]);
+
+    const fetchAlertLogs = async () => {
+        try {
+            setLoadingAlertLogs(true);
+            const { data } = await api.get(`/alert-channels/monitor/${params.id}`);
+            setAlertLogs(data);
+        } catch (error) {
+            console.error('Failed to fetch alert logs', error);
+        } finally {
+            setLoadingAlertLogs(false);
+        }
+    };
 
     const fetchAdvancedStats = async () => {
         try {
@@ -141,6 +157,7 @@ export default function DetailPage() {
             headers: m.headers || [],
             queryParams: m.queryParams || [],
             body: m.body || '',
+            alertChannels: m.alertChannels || [],
         });
         setEditTab('basic');
         setIsEditing(true);
@@ -263,23 +280,27 @@ export default function DetailPage() {
                         </div>
 
                         <div className="flex items-center gap-3 flex-wrap justify-end">
-                            {/* ✏️ Edit button */}
-                            <button id="tour-api-edit" onClick={openEdit}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all duration-200 border text-blue-400 border-blue-500/20 hover:bg-blue-500/10">
-                                <Pencil className="w-4 h-4" /> Edit Monitor
-                            </button>
+                            {isAtLeast('admin') && (
+                                <>
+                                    {/* ✏️ Edit button */}
+                                    <button id="tour-api-edit" onClick={openEdit}
+                                        className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all duration-200 border text-blue-400 border-blue-500/20 hover:bg-blue-500/10">
+                                        <Pencil className="w-4 h-4" /> Edit Monitor
+                                    </button>
 
-                            <button id="tour-api-pause" onClick={handleToggle}
-                                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all duration-200 border ${monitor.isActive
-                                    ? 'text-amber-500 border-amber-500/10 hover:bg-amber-500/10'
-                                    : 'text-emerald-500 border-emerald-500/10 hover:bg-emerald-500/10'
-                                    }`}>
-                                {monitor.isActive ? <><Pause className="w-4 h-4" /> Pause</> : <><Play className="w-4 h-4" /> Resume</>}
-                            </button>
-                            <button id="tour-api-delete" onClick={handleDelete}
-                                className="flex items-center gap-2 text-red-500 hover:bg-red-500/10 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all border border-red-500/10">
-                                <Trash2 className="w-4 h-4" /> Delete
-                            </button>
+                                    <button id="tour-api-pause" onClick={handleToggle}
+                                        className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all duration-200 border ${monitor.isActive
+                                            ? 'text-amber-500 border-amber-500/10 hover:bg-amber-500/10'
+                                            : 'text-emerald-500 border-emerald-500/10 hover:bg-emerald-500/10'
+                                            }`}>
+                                        {monitor.isActive ? <><Pause className="w-4 h-4" /> Pause</> : <><Play className="w-4 h-4" /> Resume</>}
+                                    </button>
+                                    <button id="tour-api-delete" onClick={handleDelete}
+                                        className="flex items-center gap-2 text-red-500 hover:bg-red-500/10 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all border border-red-500/10">
+                                        <Trash2 className="w-4 h-4" /> Delete
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </motion.header>
@@ -394,6 +415,67 @@ export default function DetailPage() {
                     </div>
                 </motion.div>
 
+                {/* ─── Notification History ─────────────────────────────────── */}
+                <motion.div id="tour-api-notifications" variants={itemVariants} className="mb-12">
+                    <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 tracking-tight">
+                        <BellDot className="w-6 h-6 text-amber-500" /> Notification History
+                    </h2>
+                    <div className="glass-card border border-white/[0.05] overflow-hidden">
+                        {loadingAlertLogs ? (
+                            <div className="p-8 flex items-center justify-center">
+                                <div className="w-6 h-6 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+                            </div>
+                        ) : alertLogs.length === 0 ? (
+                            <div className="p-12 text-center">
+                                <p className="text-gray-500 italic font-medium">No notifications sent in the last 24 hours.</p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-white/[0.05]">
+                                {alertLogs.map((log: any) => (
+                                    <div key={log._id} className="p-6 flex items-center justify-between hover:bg-white/[0.02] transition-all">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`p-3 rounded-2xl ${
+                                                log.status === 'sent' ? 'bg-emerald-500/10' : 'bg-red-500/10'
+                                            }`}>
+                                                {log.alertChannelId?.type === 'slack' ? <MessageSquare className="w-5 h-5 text-[#4A154B]" /> :
+                                                 log.alertChannelId?.type === 'discord' ? <MessageSquare className="w-5 h-5 text-[#5865F2]" /> :
+                                                 log.alertChannelId?.type === 'teams' ? <MessageSquare className="w-5 h-5 text-[#6264A7]" /> :
+                                                 log.alertChannelId?.type === 'webhook' ? <Webhook className="w-5 h-5 text-gray-400" /> :
+                                                 <Mail className="w-5 h-5 text-blue-400" />}
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-white font-bold">{log.alertChannelId?.name || 'Email Alert'}</span>
+                                                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black tracking-widest ${
+                                                        log.type === 'down' ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'
+                                                    }`}>
+                                                        {log.type.toUpperCase()}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[10px] text-gray-500 font-bold mt-1">
+                                                    {formatDistanceToNow(new Date(log.sentAt), { addSuffix: true })} • {format(new Date(log.sentAt), 'HH:mm:ss')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest border ${
+                                                log.status === 'sent' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-red-500/10 border-red-500/20 text-red-500'
+                                            }`}>
+                                                {log.status.toUpperCase()}
+                                            </span>
+                                            {log.errorMessage && (
+                                                <p className="text-[9px] text-red-400 font-medium mt-1.5 max-w-[200px] truncate" title={log.errorMessage}>
+                                                    {log.errorMessage}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+
                 {/* ─── Logs Table ──────────────────────────────────────────── */}
                 <motion.div id="tour-api-logs" variants={itemVariants}>
                     <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3 tracking-tight">
@@ -485,7 +567,7 @@ export default function DetailPage() {
                             {/* Sub-tabs */}
                             <div className="relative z-10 flex gap-1 px-6 py-3"
                                 style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                {(['basic', 'advanced'] as const).map((tab) => (
+                                {(['basic', 'notifications', 'advanced'] as const).map((tab) => (
                                     <button key={tab} type="button" onClick={() => setEditTab(tab)}
                                         className="px-4 py-2 rounded-xl text-sm font-bold capitalize transition-all"
                                         style={editTab === tab ? {
@@ -500,6 +582,26 @@ export default function DetailPage() {
                             {/* Form */}
                             <form onSubmit={handleSave} className="flex flex-col flex-1 overflow-hidden relative z-10">
                                 <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+                                    {editTab === 'notifications' && (
+                                        <div className="space-y-6">
+                                            <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 mb-2">
+                                                <div className="flex items-start gap-3">
+                                                    <BellDot className="w-5 h-5 text-amber-500 mt-0.5" />
+                                                    <div>
+                                                        <h4 className="text-sm font-black text-amber-200">Alert Channels</h4>
+                                                        <p className="text-[10px] text-amber-500/70 leading-relaxed font-medium mt-0.5">
+                                                            Select which channels should receive notifications when this monitor goes down or recovers.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <AlertChannelSelector
+                                                selectedChannels={editForm.alertChannels}
+                                                onChange={(channels) => setEditForm({ ...editForm, alertChannels: channels })}
+                                            />
+                                        </div>
+                                    )}
 
                                     {editTab === 'basic' && (
                                         <>
@@ -587,6 +689,20 @@ export default function DetailPage() {
                                                     style={INPUT_STYLE} />
                                                 <p className="text-[11px] text-gray-600 mt-1.5 ml-1">Only sent for POST, PUT and PATCH.</p>
                                             </div>
+                                        </div>
+                                    )}
+
+                                    {editTab === 'notifications' && (
+                                        <div className="space-y-6">
+                                            <div className="p-4 rounded-xl" style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.1)' }}>
+                                                <p className="text-[11px] text-blue-300 leading-relaxed">
+                                                    Configure multi-channel alerts for this monitor. Incident notifications will be sent to all assigned channels.
+                                                </p>
+                                            </div>
+                                            <AlertChannelSelector 
+                                                selectedChannels={editForm.alertChannels}
+                                                onChange={(ids) => setEditForm({ ...editForm, alertChannels: ids })}
+                                            />
                                         </div>
                                     )}
                                 </div>

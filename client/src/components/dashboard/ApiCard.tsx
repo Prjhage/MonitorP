@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Activity, Clock, Globe, ArrowUpRight, MoreVertical } from 'lucide-react';
+import { Activity, Clock, Globe, ArrowUpRight, Play, Pause, Trash2, Wrench } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '@/context/AuthContext';
 
 interface ApiCardProps {
     api: {
@@ -14,14 +15,20 @@ interface ApiCardProps {
         lastChecked: string;
         isActive: boolean;
         responseTime?: number;
+        inMaintenance?: boolean;
     };
     onClick: () => void;
+    onTogglePause?: (e: React.MouseEvent) => void;
+    onDelete?: (e: React.MouseEvent) => void;
 }
 
-const ApiCard = React.memo(function ApiCard({ api, onClick }: ApiCardProps) {
+const ApiCard = React.memo(function ApiCard({ api, onClick, onTogglePause, onDelete }: ApiCardProps) {
+    const { isAtLeast } = useAuth();
     const isUp = api.status === 'UP' && api.isActive;
     const isDown = api.status === 'DOWN' && api.isActive;
     const isPaused = !api.isActive;
+
+    const canEdit = isAtLeast('admin');
 
     // Design tokens based on status
     const statusColor = isPaused ? 'gray' : isUp ? 'emerald' : isDown ? 'red' : 'amber';
@@ -81,12 +88,41 @@ const ApiCard = React.memo(function ApiCard({ api, onClick }: ApiCardProps) {
                                 <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-${statusColor}-500/10 border border-${statusColor}-500/20 ${textColors[statusColor]}`}>
                                     {isPaused ? 'Paused' : api.status}
                                 </span>
+                                {api.inMaintenance && (
+                                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-1">
+                                        <Wrench className="w-2.5 h-2.5" /> Maintenance
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    <div className="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-white/10 transition-all group-hover:rotate-45">
-                        <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
+                    <div className="flex items-center gap-2">
+                        {onTogglePause && canEdit && (
+                            <button
+                                onClick={onTogglePause}
+                                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all border ${
+                                    isPaused
+                                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
+                                        : 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20'
+                                }`}
+                                title={isPaused ? 'Resume' : 'Pause'}
+                            >
+                                {isPaused ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4" />}
+                            </button>
+                        )}
+                        {onDelete && canEdit && (
+                            <button
+                                onClick={onDelete}
+                                className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500/20 transition-all"
+                                title="Delete"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        )}
+                        <div className="w-9 h-9 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-white/10 transition-all group-hover:rotate-45">
+                            <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                        </div>
                     </div>
                 </div>
 

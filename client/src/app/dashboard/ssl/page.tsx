@@ -4,14 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import SslCard from '@/components/dashboard/SslCard';
 import api from '@/services/api';
-import { Plus, Search, X, Globe, Bell, Lock } from 'lucide-react';
+import { Plus, Search, X, Globe, Bell, Lock, BellDot } from 'lucide-react';
+import AlertChannelSelector from '@/components/alerts/AlertChannelSelector';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
+import { useAuth } from '@/context/AuthContext';
 
 const INPUT = 'w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none transition-all duration-200 placeholder-white/20 focus:bg-white/[0.06] focus:border-teal-500/60 focus:ring-2 focus:ring-teal-500/15';
 const LABEL = 'block text-[10px] font-black uppercase tracking-[0.12em] text-gray-400 mb-1.5 ml-0.5';
 
-const EMPTY_FORM = { name: '', domain: '', alertEmail: '' };
+const EMPTY_FORM = { name: '', domain: '', alertEmail: '', alertChannels: [] as string[] };
 
 const getSslUrl = (path: string) => {
     let base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -28,6 +31,8 @@ export default function SslPage() {
     const [submitting, setSubmitting] = useState(false);
     const [search, setSearch] = useState('');
     const { showToast } = useToast();
+    const { confirm: askConfirm } = useConfirm();
+    const { isAtLeast } = useAuth();
 
     const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
     const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: 'spring' as const, damping: 25, stiffness: 100 } } };
@@ -66,6 +71,34 @@ export default function SslPage() {
         }
     };
 
+    const handleTogglePause = async (id: string, isActive: boolean) => {
+        try {
+            const { data } = await api.patch(getSslUrl(`/${id}/toggle`));
+            setMonitors(prev => prev.map(m => m._id === id ? data : m));
+            showToast(isActive ? 'Monitor paused' : 'Monitor resumed', 'success');
+        } catch (err) {
+            showToast('Failed to toggle monitor', 'error');
+        }
+    };
+
+    const handleDelete = (id: string, name: string) => {
+        askConfirm({
+            title: 'Delete SSL Monitor',
+            message: `Are you sure you want to delete "${name}"? All monitoring history will be lost.`,
+            confirmText: 'Delete',
+            type: 'danger',
+            onConfirm: async () => {
+                try {
+                    await api.delete(getSslUrl(`/${id}`));
+                    setMonitors(prev => prev.filter(m => m._id !== id));
+                    showToast('Monitor deleted successfully', 'success');
+                } catch (err) {
+                    showToast('Failed to delete monitor', 'error');
+                }
+            },
+        });
+    };
+
     const handleClose = () => { setIsAdding(false); setForm(EMPTY_FORM); };
 
     const filtered = monitors.filter(m =>
@@ -97,11 +130,13 @@ export default function SslPage() {
                         <input type="text" placeholder="Find certificate..." value={search} onChange={e => setSearch(e.target.value)}
                             className="premium-input pl-12 pr-4 py-2.5 w-72" suppressHydrationWarning />
                     </div>
-                    <button id="tour-add-ssl" onClick={() => setIsAdding(true)} suppressHydrationWarning
-                        className="premium-button flex items-center gap-2"
-                        style={{ background: 'linear-gradient(135deg, #0d9488, #0891b2)' }}>
-                        <Plus className="w-5 h-5" /> Add SSL Monitor
-                    </button>
+                    {isAtLeast('admin') && (
+                        <button id="tour-add-ssl" onClick={() => setIsAdding(true)} suppressHydrationWarning
+                            className="premium-button flex items-center gap-2"
+                            style={{ background: 'linear-gradient(135deg, #0d9488, #0891b2)' }}>
+                            <Plus className="w-5 h-5" /> Add SSL Monitor
+                        </button>
+                    )}
                 </div>
             </motion.header>
 
@@ -136,7 +171,12 @@ export default function SslPage() {
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {filtered.map(m => (
                                 <motion.div key={m._id} variants={itemVariants} initial="hidden" animate="show" exit={{ opacity: 0, scale: 0.9 }}>
-                                    <SslCard monitor={m} onClick={() => router.push(`/dashboard/ssl/${m._id}`)} />
+                                    <SslCard
+                                        monitor={m}
+                                        onClick={() => router.push(`/dashboard/ssl/${m._id}`)}
+                                        onTogglePause={(e) => { e.stopPropagation(); handleTogglePause(m._id, m.isActive); }}
+                                        onDelete={(e) => { e.stopPropagation(); handleDelete(m._id, m.name); }}
+                                    />
                                 </motion.div>
                             ))}
                         </motion.div>
@@ -227,15 +267,20 @@ export default function SslPage() {
 
                                     <div>
                                         <label className={LABEL}>Alert Email</label>
-                                        <div className="relative">
+                                        <div className="relative mb-5">
                                             <Bell className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                                             <input id="tour-ssl-form-email" type="email" placeholder="alerts@company.com"
                                                 value={form.alertEmail} onChange={e => setForm({ ...form, alertEmail: e.target.value })}
                                                 className={INPUT} style={{ paddingLeft: '2.5rem' }} suppressHydrationWarning />
                                         </div>
-                                        <p className="text-[11px] text-gray-600 mt-1.5 ml-1">
-                                            Alerts sent at 30, 15, 7, 1 day(s) before expiry and on expiry day.
-                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <label className={LABEL}>Notification Channels</label>
+                                        <AlertChannelSelector 
+                                            selectedChannels={form.alertChannels}
+                                            onChange={(ids) => setForm({ ...form, alertChannels: ids })}
+                                        />
                                     </div>
 
                                     {/* Alert schedule info */}

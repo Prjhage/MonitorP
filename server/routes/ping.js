@@ -3,7 +3,7 @@ const router = express.Router();
 const Heartbeat = require('../models/Heartbeat');
 const HeartbeatPing = require('../models/HeartbeatPing');
 const HeartbeatIncident = require('../models/HeartbeatIncident');
-const { sendHeartbeatRecoveryEmail } = require('../utils/mailer');
+const { dispatchAlerts } = require('../services/alerts/alertDispatcher');
 
 const cronParser = require('cron-parser');
 const { triggerHeartbeatAlert } = require('../utils/heartbeatAlerts');
@@ -103,7 +103,8 @@ router.get('/:slug/:signal?', async (req, res) => {
                 const User = require('../models/User');
                 const user = await User.findById(heartbeat.userId);
                 if (user) {
-                    await sendHeartbeatRecoveryEmail(user, heartbeat, openIncident);
+                    const monitorData = { ...heartbeat.toObject(), monitorType: 'heartbeat' };
+                    await dispatchAlerts(monitorData, openIncident, 'recovery');
                 }
             }
         }

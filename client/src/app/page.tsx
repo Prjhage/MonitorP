@@ -124,7 +124,7 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-sm font-medium mb-8"
             >
               <Zap className="w-4 h-4 fill-current" />
-              <span>Introducing API, SSL & Heartbeat Monitoring</span>
+              <span>Full Suite: API • TCP • DNS • SSL • Domain • Heartbeat</span>
             </motion.div>
 
             <motion.h1
@@ -308,6 +308,18 @@ export default function LandingPage() {
                 color: "blue"
               },
               {
+                icon: <Shield className="w-6 h-6" />,
+                title: "TCP Port Monitoring",
+                desc: "Monitor database ports, SSH, or any network service. Faster transport-layer checks for your core infrastructure.",
+                color: "indigo"
+              },
+              {
+                icon: <Globe className="w-6 h-6" />,
+                title: "DNS Drift Detection",
+                desc: "Track DNS record changes (A, CNAME, TXT) and detect hijacking or configuration drifts instantly.",
+                color: "sky"
+              },
+              {
                 icon: <Heart className="w-6 h-6" />,
                 title: "Heartbeat Monitoring",
                 desc: "The ultimate 'Dead Man's Switch' for cron jobs and internal tasks. Monitor what external pings can't reach.",
@@ -319,12 +331,17 @@ export default function LandingPage() {
                 desc: "Automatic tracking of certificate expiry and SSL health. Get notified before your users see a security warning.",
                 color: "emerald"
               },
-
               {
-                icon: <BarChart3 className="w-6 h-6" />,
-                title: "Performance Analytics",
-                desc: "Deep insights with P50, P95, and P99 latency tracking, error rate analysis, and user satisfaction scoring.",
+                icon: <Zap className="w-6 h-6" />,
+                title: "Domain Expiry",
+                desc: "WHOIS-based monitoring for your domains. Proactive alerts to ensure you never lose your brand's home.",
                 color: "amber"
+              },
+              {
+                icon: <Bell className="w-6 h-6" />,
+                title: "Multi-Channel Alerts",
+                desc: "Receive real-time notifications via Slack, Discord, MS Teams, Email, or custom Webhooks the second a failure occurs.",
+                color: "rose"
               },
               {
                 icon: <Globe className="w-6 h-6" />,
@@ -336,6 +353,7 @@ export default function LandingPage() {
               const colors = {
                 blue: "text-blue-500 bg-blue-500/10 border-blue-500/20 shadow-blue-500/10",
                 purple: "text-purple-500 bg-purple-500/10 border-purple-500/20 shadow-purple-500/10",
+                sky: "text-sky-500 bg-sky-500/10 border-sky-500/20 shadow-sky-500/10",
                 amber: "text-amber-500 bg-amber-500/10 border-amber-500/20 shadow-amber-500/10",
                 emerald: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20 shadow-emerald-500/10",
                 rose: "text-rose-500 bg-rose-500/10 border-rose-500/20 shadow-rose-500/10",

@@ -6,8 +6,9 @@ const PingLog = require('../models/PingLog');
 const Incident = require('../models/Incident');
 const User = require('../models/User');
 const cron = require('node-cron');
-const { sendAlertEmail, sendRecoveryEmail } = require('../utils/mailer');
+const { dispatchAlerts } = require('../services/alerts/alertDispatcher');
 const { runWithLimit } = require('../utils/async');
+const { isInMaintenance } = require('../utils/maintenanceCheck');
 
 // Reuse connections to skip DNS/TCP/TLS handshake overhead on repeated pings
 const axiosInstance = axios.create({
@@ -196,8 +197,26 @@ const processPing = async (api, io) => {
             reason: result.reason,
             status: 'OPEN'
         });
-        const user = await User.findById(api.userId);
-        if (user) await sendAlertEmail(user, api, incident);
+        // Emit real-time incident event to all connected clients
+        if (io) {
+            io.emit('incident-opened', {
+                _id: incident._id,
+                monitorName: api.name,
+                monitorType: 'api',
+                apiId: api._id,
+                reason: result.reason,
+                status: 'OPEN',
+                startTime: incident.startTime || new Date(),
+            });
+        }
+        // Skip alert if monitor is inside an active maintenance window
+        const skip = await isInMaintenance(api._id, api.orgId, api.userId);
+        if (!skip) {
+            const user = await User.findById(api.userId);
+            if (user) await dispatchAlerts({ ...api.toObject(), monitorType: 'api' }, incident, 'down');
+        } else {
+            console.log(`[Pinger] Maintenance window active — skipping DOWN alert for ${api.name}`);
+        }
 
     } else if (result.status === 'UP' && oldStatus === 'DOWN') {
         const incident = await Incident.findOne({ apiId: api._id, status: 'OPEN' });
@@ -206,8 +225,26 @@ const processPing = async (api, io) => {
             incident.endTime = new Date();
             incident.duration = Math.round((incident.endTime - incident.startTime) / 60000);
             await incident.save();
-            const user = await User.findById(api.userId);
-            if (user) await sendRecoveryEmail(user, api, incident);
+            // Emit real-time resolution event
+            if (io) {
+                io.emit('incident-resolved', {
+                    _id: incident._id,
+                    monitorName: api.name,
+                    monitorType: 'api',
+                    apiId: api._id,
+                    status: 'RESOLVED',
+                    startTime: incident.startTime,
+                    endTime: incident.endTime,
+                    duration: incident.duration,
+                });
+            }
+            const skip = await isInMaintenance(api._id, api.orgId, api.userId);
+            if (!skip) {
+                const user = await User.findById(api.userId);
+                if (user) await dispatchAlerts({ ...api.toObject(), monitorType: 'api' }, incident, 'recovery');
+            } else {
+                console.log(`[Pinger] Maintenance window active — skipping RECOVERY alert for ${api.name}`);
+            }
         }
     }
 

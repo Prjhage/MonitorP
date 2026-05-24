@@ -2,13 +2,16 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { useCache } from '@/context/CacheContext';
 import HeartbeatCard from '@/components/dashboard/HeartbeatCard';
 import {
-    Plus, Bell, Search, Heart, X, Zap, Clock, ShieldCheck
+    Plus, Bell, Search, Heart, X, Zap, Clock, ShieldCheck, BellDot
 } from 'lucide-react';
+import AlertChannelSelector from '@/components/alerts/AlertChannelSelector';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 
 const INPUT = 'w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none transition-all duration-200 placeholder-white/20 focus:bg-white/[0.06] focus:border-pink-500/60 focus:ring-2 focus:ring-pink-500/15';
 const SELECT = 'w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none transition-all duration-200 focus:bg-white/[0.06] focus:border-pink-500/60 focus:ring-2 focus:ring-pink-500/15 appearance-none pr-9 cursor-pointer';
@@ -22,13 +25,41 @@ const SELECT_ARROW = {
 };
 
 export default function HeartbeatsPage() {
-    const { heartbeats, loading, addHeartbeat } = useCache();
+    const { user, isAtLeast } = useAuth();
+    const { heartbeats, loading, addHeartbeat, deleteHeartbeat, toggleHeartbeat } = useCache();
     const router = useRouter();
     const [isAdding, setIsAdding] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [createdHb, setCreatedHb] = useState<any>(null);
     const [copiedId, setCopiedId] = useState<string | null>(null);
-    const { showToast } = useToast(); // Added useToast hook
+    const { showToast } = useToast();
+    const { confirm: askConfirm } = useConfirm();
+
+    const handleTogglePause = async (id: string, isPaused: boolean) => {
+        try {
+            await toggleHeartbeat(id);
+            showToast(isPaused ? 'Heartbeat resumed' : 'Heartbeat paused', 'success');
+        } catch (err) {
+            showToast('Failed to update heartbeat status', 'error');
+        }
+    };
+
+    const handleDelete = (id: string, name: string) => {
+        askConfirm({
+            title: 'Delete Heartbeat',
+            message: `Are you sure you want to delete "${name}"? All monitoring history will be lost.`,
+            confirmText: 'Delete',
+            type: 'danger',
+            onConfirm: async () => {
+                try {
+                    await deleteHeartbeat(id);
+                    showToast('Heartbeat deleted successfully', 'success');
+                } catch (err) {
+                    showToast('Failed to delete heartbeat', 'error');
+                }
+            },
+        });
+    };
 
     const handleCopy = async (text: string, id: string) => {
         try {
@@ -66,7 +97,8 @@ export default function HeartbeatsPage() {
         gracePeriod: 30,
         maxDuration: 30,
         maxDurationUnit: 'minutes',
-        alertEmail: ''
+        alertEmail: '',
+        alertChannels: [] as string[]
     });
 
     const handleAdd = async (e: React.FormEvent) => {
@@ -95,7 +127,8 @@ export default function HeartbeatsPage() {
             gracePeriod: 30,
             maxDuration: 30,
             maxDurationUnit: 'minutes',
-            alertEmail: ''
+            alertEmail: '',
+            alertChannels: []
         });
     };
 
@@ -125,9 +158,11 @@ export default function HeartbeatsPage() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4 group-focus-within:text-pink-400 transition-colors" />
                         <input type="text" placeholder="Find heartbeat..." className="premium-input pl-12 pr-4 py-2.5 w-72" suppressHydrationWarning />
                     </div>
-                    <button id="tour-add-hb" onClick={() => setIsAdding(true)} suppressHydrationWarning className="premium-button flex items-center gap-2 bg-gradient-to-r from-pink-600 to-rose-600">
-                        <Plus className="w-5 h-5" /> Add Heartbeat
-                    </button>
+                    {isAtLeast('admin') && (
+                        <button id="tour-add-hb" onClick={() => setIsAdding(true)} suppressHydrationWarning className="premium-button flex items-center gap-2 bg-gradient-to-r from-pink-600 to-rose-600">
+                            <Plus className="w-5 h-5" /> Add Heartbeat
+                        </button>
+                    )}
                 </div>
             </motion.header>
 
@@ -137,7 +172,12 @@ export default function HeartbeatsPage() {
                         <motion.div key="grid" variants={containerVariants} initial="hidden" animate="show" exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {heartbeats.map((hb) => (
                                 <motion.div key={hb._id} variants={itemVariants} initial="hidden" animate="show" exit={{ opacity: 0, scale: 0.9 }}>
-                                    <HeartbeatCard heartbeat={hb} onClick={() => router.push(`/dashboard/heartbeats/${hb._id}`)} />
+                                    <HeartbeatCard
+                                        heartbeat={hb}
+                                        onClick={() => router.push(`/dashboard/heartbeats/${hb._id}`)}
+                                        onTogglePause={(e) => { e.stopPropagation(); handleTogglePause(hb._id, hb.isPaused); }}
+                                        onDelete={(e) => { e.stopPropagation(); handleDelete(hb._id, hb.name); }}
+                                    />
                                 </motion.div>
                             ))}
                         </motion.div>
@@ -318,19 +358,19 @@ export default function HeartbeatsPage() {
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div id="tour-hb-grace">
-                                                <label className={LABEL}>Grace Period (m)</label>
-                                                <div className="relative">
-                                                    <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                                                    <input type="number" required value={form.gracePeriod}
-                                                        onChange={e => setForm({ ...form, gracePeriod: e.target.value === '' ? '' : parseInt(e.target.value) } as any)} className={INPUT} style={{ paddingLeft: '3rem' }} suppressHydrationWarning />
-                                                </div>
-                                            </div>
-                                            <div id="tour-hb-email">
+                                            <div id="tour-hb-email" className="col-span-1">
                                                 <label className={LABEL}>Alert Email</label>
                                                 <input type="email" placeholder="alerts@company.com" value={form.alertEmail}
                                                     onChange={e => setForm({ ...form, alertEmail: e.target.value })} className={INPUT} suppressHydrationWarning />
                                             </div>
+                                        </div>
+
+                                        <div>
+                                            <label className={LABEL}>Notification Channels</label>
+                                            <AlertChannelSelector 
+                                                selectedChannels={form.alertChannels}
+                                                onChange={(ids) => setForm({ ...form, alertChannels: ids })}
+                                            />
                                         </div>
 
                                         <button id="tour-hb-form-submit" type="submit" disabled={submitting} className="w-full premium-button py-4 bg-gradient-to-r from-pink-600 to-rose-600 text-lg btn-glow-pink" suppressHydrationWarning>

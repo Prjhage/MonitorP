@@ -4,18 +4,25 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { useSearchParams } from 'next/navigation';
+import api from '@/services/api';
 import { motion } from 'framer-motion';
 import { Shield, Mail, Lock, User, Building, ArrowRight } from 'lucide-react';
 
 export default function RegisterPage() {
+    const searchParams = useSearchParams();
+    const inviteToken = searchParams.get('inviteToken');
+    const inviteEmail = searchParams.get('email');
+    const orgName = searchParams.get('orgName');
+
     const [formData, setFormData] = useState({
         fullName: '',
-        companyName: '',
-        email: '',
+        companyName: orgName || '',
+        email: inviteEmail || '',
         password: ''
     });
     const [isLoading, setIsLoading] = useState(false);
-    const { register } = useAuth();
+    const { login } = useAuth(); // We'll use login function to set user state after invite completion
     const { showToast } = useToast();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,11 +33,25 @@ export default function RegisterPage() {
         e.preventDefault();
         setIsLoading(true);
         try {
-            await register(formData);
-            showToast('Account created successfully!', 'success');
-        } catch (error) {
+            if (inviteToken) {
+                const { data } = await api.post('/auth/complete-invite', {
+                    inviteToken,
+                    fullName: formData.fullName,
+                    password: formData.password
+                });
+                // Manually set user state (like login does)
+                localStorage.setItem('user', JSON.stringify(data));
+                window.location.href = '/dashboard';
+                showToast(`Welcome to ${orgName}!`, 'success');
+            } else {
+                const { data } = await api.post('/auth/register', formData);
+                localStorage.setItem('user', JSON.stringify(data));
+                window.location.href = '/dashboard';
+                showToast('Account created successfully!', 'success');
+            }
+        } catch (error: any) {
             console.error(error);
-            showToast('Registration failed. Please try again.', 'error');
+            showToast(error?.response?.data?.message || 'Registration failed.', 'error');
         } finally {
             setIsLoading(false);
         }
@@ -49,8 +70,12 @@ export default function RegisterPage() {
                     <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4 border border-blue-500/20">
                         <Shield className="w-8 h-8 text-blue-500" />
                     </div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-                    <p className="text-gray-400 text-center">Join the network of reliable software companies</p>
+                    <h1 className="text-3xl font-bold text-white mb-2">
+                        {inviteToken ? 'Join Organization' : 'Create Account'}
+                    </h1>
+                    <p className="text-gray-400 text-center">
+                        {inviteToken ? `You've been invited to join ${orgName}` : 'Join the network of reliable software companies'}
+                    </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -82,6 +107,7 @@ export default function RegisterPage() {
                                 className="premium-input pl-12"
                                 placeholder="Acme Inc."
                                 required
+                                disabled={!!inviteToken}
                             />
                         </div>
                     </div>
@@ -98,6 +124,7 @@ export default function RegisterPage() {
                                 className="premium-input pl-12"
                                 placeholder="name@company.com"
                                 required
+                                disabled={!!inviteToken}
                             />
                         </div>
                     </div>
@@ -124,7 +151,7 @@ export default function RegisterPage() {
                             disabled={isLoading}
                             className="premium-button w-full flex items-center justify-center gap-2 group"
                         >
-                            {isLoading ? 'Creating account...' : 'Start Monitoring Now'}
+                            {isLoading ? 'Creating account...' : (inviteToken ? 'Accept Invite & Join' : 'Start Monitoring Now')}
                             {!isLoading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
                         </button>
                     </div>

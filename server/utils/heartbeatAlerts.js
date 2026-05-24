@@ -1,6 +1,6 @@
 const HeartbeatIncident = require('../models/HeartbeatIncident');
 const User = require('../models/User');
-const { sendHeartbeatAlertEmail } = require('./mailer');
+const { dispatchAlerts } = require('../services/alerts/alertDispatcher');
 
 /**
  * Triggers a heartbeat alert, creates an incident, updates status, and sends notifications.
@@ -28,14 +28,15 @@ const triggerHeartbeatAlert = async (heartbeat, now, type, message, io) => {
     heartbeat.status = 'DOWN';
     await heartbeat.save();
 
-    // Send Alert Email
+    // Send Alert
     try {
         const user = await User.findById(heartbeat.userId);
         if (user) {
-            await sendHeartbeatAlertEmail(user, heartbeat, incident);
+            const monitorData = { ...heartbeat.toObject(), monitorType: 'heartbeat' };
+            await dispatchAlerts(monitorData, incident, 'down');
         }
     } catch (err) {
-        console.error('Failed to send heartbeat alert email:', err);
+        console.error('Failed to dispatch heartbeat alert:', err);
     }
 
     // Socket update

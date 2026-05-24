@@ -6,8 +6,9 @@ import api from '@/services/api';
 import { motion } from 'framer-motion';
 import {
     ArrowLeft, Globe, ShieldCheck, ShieldX, ShieldAlert,
-    AlertTriangle, RefreshCw, Trash2, Pause, Play, Lock, Calendar, Clock
+    AlertTriangle, RefreshCw, Trash2, Pause, Play, Lock, Calendar, Clock, Pencil, X, Save, BellDot, MessageSquare, Webhook, Mail
 } from 'lucide-react';
+import AlertChannelSelector from '@/components/alerts/AlertChannelSelector';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
@@ -53,6 +54,12 @@ export default function SslDetailPage() {
     const [monitor, setMonitor] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [rechecking, setRechecking] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState<any>(null);
+    const [saving, setSaving] = useState(false);
+    const [editTab, setEditTab] = useState<'basic' | 'notifications'>('basic');
+    const [alertLogs, setAlertLogs] = useState<any[]>([]);
+    const [loadingAlertLogs, setLoadingAlertLogs] = useState(false);
 
     const fetchMonitor = useCallback(async () => {
         try {
@@ -65,7 +72,22 @@ export default function SslDetailPage() {
         }
     }, [params.id]);
 
-    useEffect(() => { fetchMonitor(); }, [fetchMonitor]);
+    const fetchAlertLogs = useCallback(async () => {
+        try {
+            setLoadingAlertLogs(true);
+            const { data } = await api.get(`/alert-channels/monitor/${params.id}`);
+            setAlertLogs(data);
+        } catch (error) {
+            console.error('Failed to fetch alert logs', error);
+        } finally {
+            setLoadingAlertLogs(false);
+        }
+    }, [params.id]);
+
+    useEffect(() => { 
+        fetchMonitor(); 
+        fetchAlertLogs();
+    }, [fetchMonitor, fetchAlertLogs]);
 
     const handleRecheck = async () => {
         setRechecking(true);
@@ -106,6 +128,32 @@ export default function SslDetailPage() {
                 }
             },
         });
+    };
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaving(true);
+        try {
+            await api.patch(getSslUrl(`/${params.id}`), editForm);
+            showToast('Changes saved successfully', 'success');
+            setIsEditing(false);
+            fetchMonitor();
+        } catch (err) {
+            showToast('Failed to save changes', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const openEdit = () => {
+        setEditForm({
+            name: monitor.name,
+            domain: monitor.domain,
+            checkInterval: monitor.checkInterval || 1440,
+            alertEmail: monitor.alertEmail,
+            alertChannels: monitor.alertChannels || []
+        });
+        setEditTab('basic');
+        setIsEditing(true);
     };
 
     // ── Loading skeleton ──────────────────────────────────────────────────────
@@ -162,6 +210,10 @@ export default function SslDetailPage() {
                         className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all border text-teal-400 border-teal-500/20 hover:bg-teal-500/10 disabled:opacity-50">
                         <RefreshCw className={`w-4 h-4 ${rechecking ? 'animate-spin' : ''}`} />
                         {rechecking ? 'Checking...' : 'Re-check'}
+                    </button>
+                    <button onClick={openEdit}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all border text-blue-400 border-blue-500/20 hover:bg-blue-500/10">
+                        <Pencil className="w-4 h-4" /> Edit
                     </button>
                     <button onClick={handleToggle}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all border ${
@@ -313,7 +365,7 @@ export default function SslDetailPage() {
             </motion.div>
 
             {/* ─── Alert schedule ────────────────────────────────────────── */}
-            <motion.div id="tour-ssl-alerts" variants={itemVariants} className="glass-card border border-white/[0.05] p-6">
+            <motion.div id="tour-ssl-alerts" variants={itemVariants} className="glass-card border border-white/[0.05] p-6 mt-8">
                 <h2 className="text-lg font-black text-white mb-5 flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-amber-400" /> Alert Schedule
                 </h2>
@@ -338,6 +390,134 @@ export default function SslDetailPage() {
                     Alerts are sent once per threshold. Each milestone alert is sent only when first crossed.
                 </p>
             </motion.div>
+
+            <motion.div id="tour-ssl-notifications" variants={itemVariants} className="glass-card p-8 rounded-[32px] border border-white/5 mt-8 mb-8">
+
+                <h2 className="text-xl font-black text-white mb-6 flex items-center gap-3">
+                    <BellDot className="w-6 h-6 text-amber-500" /> Notification History
+                </h2>
+                <div className="glass-card border border-white/[0.05] overflow-hidden rounded-2xl">
+                    {loadingAlertLogs ? (
+                        <div className="p-8 flex items-center justify-center">
+                            <div className="w-6 h-6 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+                        </div>
+                    ) : alertLogs.length === 0 ? (
+                        <div className="p-12 text-center">
+                            <p className="text-gray-500 italic font-medium">No notifications sent recently.</p>
+                        </div>
+                    ) : (
+                        <div className="divide-y divide-white/[0.05]">
+                            {alertLogs.map((log: any) => (
+                                <div key={log._id} className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition-all">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`p-3 rounded-2xl ${
+                                            log.status === 'sent' ? 'bg-emerald-500/10' : 'bg-red-500/10'
+                                        }`}>
+                                            {log.alertChannelId?.type === 'slack' ? <MessageSquare className="w-5 h-5 text-[#4A154B]" /> :
+                                             log.alertChannelId?.type === 'discord' ? <MessageSquare className="w-5 h-5 text-[#5865F2]" /> :
+                                             log.alertChannelId?.type === 'teams' ? <MessageSquare className="w-5 h-5 text-[#6264A7]" /> :
+                                             log.alertChannelId?.type === 'webhook' ? <Webhook className="w-5 h-5 text-gray-400" /> :
+                                             <Mail className="w-5 h-5 text-blue-400" />}
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-white font-bold">{log.alertChannelId?.name || 'Email Alert'}</span>
+                                                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black tracking-widest ${
+                                                    log.type === 'down' ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'
+                                                }`}>
+                                                    {log.type.toUpperCase()}
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] text-gray-500 font-bold mt-1">
+                                                {formatDistanceToNow(new Date(log.sentAt), { addSuffix: true })} • {format(new Date(log.sentAt), 'HH:mm:ss')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest border ${
+                                            log.status === 'sent' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-red-500/10 border-red-500/20 text-red-500'
+                                        }`}>
+                                            {log.status.toUpperCase()}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </motion.div>
+            {/* Edit Modal */}
+            {isEditing && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ backgroundColor: 'rgba(3,3,3,0.85)', backdropFilter: 'blur(8px)' }}>
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md bg-[#0c0c0e] border border-white/10 rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                                    <Pencil className="w-5 h-5 text-blue-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-white">Edit SSL Monitor</h3>
+                                    <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Monitor Configuration</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setIsEditing(false)} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-500 hover:text-white">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="flex gap-4 px-6 pt-4">
+                            <button onClick={() => setEditTab('basic')} className={`pb-2 text-sm font-bold transition-all border-b-2 ${editTab === 'basic' ? 'text-blue-400 border-blue-400' : 'text-gray-500 border-transparent'}`}>Basic Settings</button>
+                            <button onClick={() => setEditTab('notifications')} className={`pb-2 text-sm font-bold transition-all border-b-2 ${editTab === 'notifications' ? 'text-blue-400 border-blue-400' : 'text-gray-500 border-transparent'}`}>Notifications</button>
+                        </div>
+
+                        <form onSubmit={handleSave} className="p-6 overflow-y-auto">
+                            {editTab === 'basic' ? (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Friendly Name</label>
+                                        <input type="text" required value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} 
+                                            className="w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none focus:border-blue-500/50 transition-all" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Domain</label>
+                                        <input type="text" required value={editForm.domain} onChange={e => setEditForm({ ...editForm, domain: e.target.value })} 
+                                            className="w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none focus:border-blue-500/50 transition-all" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Check Interval (min)</label>
+                                            <input type="number" required value={editForm.checkInterval} onChange={e => setEditForm({ ...editForm, checkInterval: parseInt(e.target.value) })} 
+                                                className="w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none focus:border-blue-500/50 transition-all" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Alert Email</label>
+                                            <input type="email" value={editForm.alertEmail} onChange={e => setEditForm({ ...editForm, alertEmail: e.target.value })} 
+                                                className="w-full px-4 py-3 rounded-[14px] bg-white/[0.04] border border-white/[0.09] text-white text-sm outline-none focus:border-blue-500/50 transition-all" placeholder="alerts@company.com" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
+                                        <p className="text-[11px] text-blue-300 leading-relaxed font-medium">Configure multi-channel alerts for SSL expiry notifications.</p>
+                                    </div>
+                                    <AlertChannelSelector 
+                                        selectedChannels={editForm.alertChannels}
+                                        onChange={ids => setEditForm({ ...editForm, alertChannels: ids })}
+                                    />
+                                </div>
+                            )}
+
+                            <div className="mt-8 flex gap-3">
+                                <button type="button" onClick={() => setIsEditing(false)} className="flex-1 py-3 rounded-[14px] bg-white/5 text-white text-sm font-bold border border-white/10 hover:bg-white/10 transition-all">Cancel</button>
+                                <button type="submit" disabled={saving} className="flex-1 py-3 rounded-[14px] bg-blue-600 text-white text-sm font-black border border-blue-500/50 hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50">
+                                    {saving ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </form>
+                    </motion.div>
+                </div>
+            )}
         </motion.div>
     );
 }

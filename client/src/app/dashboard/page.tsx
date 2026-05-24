@@ -5,10 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useCache } from '@/context/CacheContext';
 import ApiCard from '@/components/dashboard/ApiCard';
 import {
-    Plus, Bell, Search, Activity, ShieldCheck,
-    Settings2, Code2, CheckSquare, Globe2, X
+    Plus, Bell, Search, Activity, ShieldCheck, Heart,
+    Settings2, Code2, CheckSquare, Globe2, X, BellDot,
+    Shield, Cpu, Network, Zap
 } from 'lucide-react';
+import AlertChannelSelector from '@/components/alerts/AlertChannelSelector';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
+import { useAuth } from '@/context/AuthContext';
 
 // ─── Shared input/label class strings (avoids CSS layer issues) ───────────────
 const INPUT =
@@ -35,8 +40,9 @@ interface NewApiForm {
     expectedStatus: number; alertEmail: string;
     headers: KVPair[]; queryParams: KVPair[];
     body: string; assertions: Assertion[];
+    alertChannels: string[];
 }
-type ModalTab = 'basic' | 'advanced' | 'assertions';
+type ModalTab = 'basic' | 'advanced' | 'assertions' | 'notifications';
 
 const ASSERTION_TYPES = [
     { value: 'status_code', label: 'Status Code' },
@@ -50,7 +56,7 @@ const OPERATORS: Record<string, { value: string; label: string }[]> = {
     body_contains: [{ value: 'contains', label: 'contains' }, { value: 'not_contains', label: 'does not contain' }],
     body_json_path: [{ value: 'eq', label: '= equals' }, { value: 'contains', label: 'contains' }, { value: 'not_contains', label: 'does not contain' }],
 };
-const EMPTY_FORM: NewApiForm = { name: '', url: '', interval: 1, method: 'GET', expectedStatus: 200, alertEmail: '', headers: [], queryParams: [], body: '', assertions: [] };
+const EMPTY_FORM: NewApiForm = { name: '', url: '', interval: 1, method: 'GET', expectedStatus: 200, alertEmail: '', headers: [], queryParams: [], body: '', assertions: [], alertChannels: [] };
 
 // ─── KV Editor ───────────────────────────────────────────────────────────────
 function KVEditor({ label, pairs, onChange }: { label: string; pairs: KVPair[]; onChange: (p: KVPair[]) => void }) {
@@ -148,12 +154,41 @@ function AssertionEditor({ assertions, onChange }: { assertions: Assertion[]; on
 
 // ─── Main Dashboard Page ──────────────────────────────────────────────────────
 export default function DashboardPage() {
-    const { apis, loading, addApi } = useCache();
+    const { apis, heartbeats, ssls, tcps, dns, domains, loading, addApi, toggleApi, deleteApi } = useCache();
     const router = useRouter();
+    const { showToast } = useToast();
+    const { confirm: askConfirm } = useConfirm();
+    const { isAtLeast } = useAuth();
     const [isAdding, setIsAdding] = useState(false);
     const [activeTab, setActiveTab] = useState<ModalTab>('basic');
     const [newApi, setNewApi] = useState<NewApiForm>(EMPTY_FORM);
     const [submitting, setSubmitting] = useState(false);
+
+    const handleTogglePause = async (id: string, isActive: boolean) => {
+        try {
+            await toggleApi(id);
+            showToast(isActive ? 'Monitor paused' : 'Monitor resumed', 'success');
+        } catch (err) {
+            showToast('Failed to toggle monitor', 'error');
+        }
+    };
+
+    const handleDelete = (id: string, name: string) => {
+        askConfirm({
+            title: 'Delete Monitor',
+            message: `Are you sure you want to delete "${name}"? All monitoring history will be lost.`,
+            confirmText: 'Delete',
+            type: 'danger',
+            onConfirm: async () => {
+                try {
+                    await deleteApi(id);
+                    showToast('Monitor deleted successfully', 'success');
+                } catch (err) {
+                    showToast('Failed to delete monitor', 'error');
+                }
+            },
+        });
+    };
 
     const handleAddApi = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -179,6 +214,7 @@ export default function DashboardPage() {
         { id: 'basic', label: 'Basic', icon: Settings2 },
         { id: 'advanced', label: 'Advanced', icon: Code2 },
         { id: 'assertions', label: 'Assertions', icon: CheckSquare },
+        { id: 'notifications', label: 'Notifications', icon: BellDot },
     ];
 
     return (
@@ -191,72 +227,293 @@ export default function DashboardPage() {
                         Platform <span className="text-blue-500">Overview</span>
                     </h2>
                     <p className="text-gray-500 font-medium">
-                        Monitoring <span className="text-white font-bold">{apis.length}</span> individual service endpoints
+                        Real-time status of your <span className="text-white font-bold">entire infrastructure</span>
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
                     <div id="tour-search" className="relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
-                        <input type="text" placeholder="Find API monitor..." className="premium-input pl-12 pr-4 py-2.5 w-72" suppressHydrationWarning />
+                        <input type="text" placeholder="Global search..." className="premium-input pl-12 pr-4 py-2.5 w-72" suppressHydrationWarning />
                     </div>
-                    <button className="p-3 bg-white/[0.03] text-gray-400 hover:text-white rounded-xl border border-white/[0.06] transition-all hover:border-white/10" suppressHydrationWarning>
-                        <Bell className="w-5 h-5" />
-                    </button>
-                    <button id="tour-add-monitor" onClick={() => setIsAdding(true)} className="premium-button btn-glow-purple flex items-center gap-2" suppressHydrationWarning>
-                        <Plus className="w-5 h-5" /> Add Monitor
-                    </button>
+                    {isAtLeast('admin') && (
+                        <div className="flex items-center gap-2">
+                            <button id="tour-add-monitor" onClick={() => setIsAdding(true)} className="premium-button btn-glow-blue flex items-center gap-2" suppressHydrationWarning>
+                                <Plus className="w-5 h-5" /> New API Monitor
+                            </button>
+                        </div>
+                    )}
                 </div>
             </motion.header>
 
-            {/* ─── API Grid ───────────────────────────────────────────── */}
-            <div id="tour-api-grid" className="mb-10 min-h-[100px]">
-                <AnimatePresence mode="wait">
-                    {loading ? (
-                        <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {[1, 2, 3, 4, 5, 6].map((i) => (
-                                <div key={i} className="glass-card p-8 border border-white/[0.05] relative overflow-hidden h-[340px]">
-                                    <div className="flex justify-between items-start mb-10">
+            {/* ─── Summary Stats Section ─────────────────────────────── */}
+            <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                {/* Global Health Card */}
+                <div className="glass-card p-6 border border-white/5 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="relative z-10">
+                        <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-emerald-400" /> Global Health
+                        </div>
+                        <div className="flex items-end gap-2">
+                            <span className="text-3xl font-black text-white">
+                                {(() => {
+                                    const total = (apis?.length || 0) + (heartbeats?.length || 0) + (ssls?.length || 0) + (tcps?.length || 0) + (dns?.length || 0) + (domains?.length || 0);
+                                    if (total === 0) return 100;
+                                    const up = 
+                                        (apis?.filter(a => a.status === 'UP').length || 0) + 
+                                        (heartbeats?.filter(h => h.status === 'UP' || h.status === 'RUNNING').length || 0) +
+                                        (ssls?.filter(s => s.status === 'ok').length || 0) +
+                                        (tcps?.filter(t => t.status === 'ok').length || 0) +
+                                        (dns?.filter(d => d.status === 'ok').length || 0) +
+                                        (domains?.filter(dm => (dm as any).daysRemaining > 0).length || 0);
+                                    return Math.round((up / total) * 100);
+                                })()}%
+                            </span>
+                            <span className="text-emerald-400 text-xs font-black mb-1.5 uppercase">Operational</span>
+                        </div>
+                        <div className="mt-3 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                            <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(() => {
+                                    const total = (apis?.length || 0) + (heartbeats?.length || 0) + (ssls?.length || 0) + (tcps?.length || 0) + (dns?.length || 0) + (domains?.length || 0);
+                                    if (total === 0) return 100;
+                                    const up = 
+                                        (apis?.filter(a => a.status === 'UP').length || 0) + 
+                                        (heartbeats?.filter(h => h.status === 'UP' || h.status === 'RUNNING').length || 0) +
+                                        (ssls?.filter(s => s.status === 'ok').length || 0) +
+                                        (tcps?.filter(t => t.status === 'ok').length || 0) +
+                                        (dns?.filter(d => d.status === 'ok').length || 0) +
+                                        (domains?.filter(dm => (dm as any).daysRemaining > 0).length || 0);
+                                    return (up / total) * 100;
+                                })()}%` }}
+                                className="h-full bg-emerald-500"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* API Monitors Card */}
+                <div 
+                    onClick={() => router.push('/dashboard')}
+                    className="glass-card p-6 border border-white/5 cursor-pointer hover:border-blue-500/30 transition-all group"
+                >
+                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-blue-400" /> API Monitors
+                    </div>
+                    <div className="flex justify-between items-end">
+                        <div className="text-3xl font-black text-white">{apis?.length || 0}</div>
+                        <div className="text-right">
+                            <div className="text-[10px] font-black text-emerald-400 uppercase">{apis?.filter(a => a.status === 'UP').length || 0} Online</div>
+                            <div className="text-[10px] font-black text-red-400 uppercase">{apis?.filter(a => a.status === 'DOWN').length || 0} Offline</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Heartbeats Card */}
+                <div 
+                    onClick={() => router.push('/dashboard/heartbeats')}
+                    className="glass-card p-6 border border-white/5 cursor-pointer hover:border-pink-500/30 transition-all group"
+                >
+                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-pink-400" /> Heartbeats
+                    </div>
+                    <div className="flex justify-between items-end">
+                        <div className="text-3xl font-black text-white">{heartbeats?.length || 0}</div>
+                        <div className="text-right">
+                            <div className="text-[10px] font-black text-emerald-400 uppercase">{heartbeats?.filter(h => h.status === 'UP' || h.status === 'RUNNING').length || 0} Healthy</div>
+                            <div className="text-[10px] font-black text-red-400 uppercase">{heartbeats?.filter(h => h.status === 'DOWN').length || 0} Missed</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Active Incidents Card */}
+                <div 
+                    onClick={() => router.push('/dashboard/incidents')}
+                    className="glass-card p-6 border border-white/5 cursor-pointer hover:border-red-500/30 transition-all group"
+                >
+                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <BellDot className="w-4 h-4 text-red-500" /> Incidents
+                    </div>
+                    <div className="flex justify-between items-end">
+                        <div className={(() => {
+                            const downCount = 
+                                (apis?.filter(a => a.status === 'DOWN').length || 0) + 
+                                (heartbeats?.filter(h => h.status === 'DOWN').length || 0) +
+                                (ssls?.filter(s => s.status === 'expired' || s.status === 'error').length || 0) +
+                                (tcps?.filter(t => t.status === 'failed').length || 0) +
+                                (dns?.filter(d => d.status === 'failed').length || 0) +
+                                (domains?.filter(dm => (dm as any).daysRemaining <= 0).length || 0);
+                            return `text-3xl font-black ${downCount > 0 ? 'text-red-500' : 'text-white'}`;
+                        })()}>
+                            {(() => {
+                                return (
+                                    (apis?.filter(a => a.status === 'DOWN').length || 0) + 
+                                    (heartbeats?.filter(h => h.status === 'DOWN').length || 0) +
+                                    (ssls?.filter(s => s.status === 'expired' || s.status === 'error').length || 0) +
+                                    (tcps?.filter(t => t.status === 'failed').length || 0) +
+                                    (dns?.filter(d => d.status === 'failed').length || 0) +
+                                    (domains?.filter(dm => (dm as any).daysRemaining <= 0).length || 0)
+                                );
+                            })()}
+                        </div>
+                        <div className="text-right">
+                            <div className="text-[10px] font-black text-gray-400 uppercase">Active Now</div>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* ─── Infrastructure Inventory ─────────────────────────── */}
+            <motion.div variants={itemVariants} className="mb-12">
+                <div className="flex items-center gap-3 mb-6">
+                    <Shield className="w-5 h-5 text-blue-500" />
+                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Infrastructure Fleet</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="glass-card p-5 border border-white/5 hover:border-blue-500/20 transition-all cursor-pointer" onClick={() => router.push('/dashboard/ssl')}>
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                                <ShieldCheck className="w-4 h-4 text-blue-400" />
+                            </div>
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">SSL Certs</span>
+                        </div>
+                        <div className="flex justify-between items-end">
+                            <span className="text-2xl font-black text-white">{ssls?.length || 0}</span>
+                            <span className="text-[9px] font-bold text-emerald-400 mb-1">{ssls?.filter(s => s.status === 'ok').length || 0} Valid</span>
+                        </div>
+                    </div>
+
+                    <div className="glass-card p-5 border border-white/5 hover:border-purple-500/20 transition-all cursor-pointer" onClick={() => router.push('/dashboard/tcp')}>
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                                <Cpu className="w-4 h-4 text-purple-400" />
+                            </div>
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">TCP Ports</span>
+                        </div>
+                        <div className="flex justify-between items-end">
+                            <span className="text-2xl font-black text-white">{tcps?.length || 0}</span>
+                            <span className="text-[9px] font-bold text-emerald-400 mb-1">{tcps?.filter(t => t.status === 'ok').length || 0} Open</span>
+                        </div>
+                    </div>
+
+                    <div className="glass-card p-5 border border-white/5 hover:border-cyan-500/20 transition-all cursor-pointer" onClick={() => router.push('/dashboard/dns')}>
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                                <Network className="w-4 h-4 text-cyan-400" />
+                            </div>
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">DNS Records</span>
+                        </div>
+                        <div className="flex justify-between items-end">
+                            <span className="text-2xl font-black text-white">{dns?.length || 0}</span>
+                            <span className="text-[9px] font-bold text-emerald-400 mb-1">{dns?.filter(d => d.status === 'ok').length || 0} Correct</span>
+                        </div>
+                    </div>
+
+                    <div className="glass-card p-5 border border-white/5 hover:border-orange-500/20 transition-all cursor-pointer" onClick={() => router.push('/dashboard/domains')}>
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                                <Globe2 className="w-4 h-4 text-orange-400" />
+                            </div>
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Domains</span>
+                        </div>
+                        <div className="flex justify-between items-end">
+                            <span className="text-2xl font-black text-white">{domains?.length || 0}</span>
+                            <span className="text-[9px] font-bold text-emerald-400 mb-1">{(domains as any)?.filter((dm: any) => dm.daysRemaining > 0).length || 0} Active</span>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* ─── Monitors Summary ─────────────────────────────────────────── */}
+            <div className="mb-12">
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                        <Activity className="w-4 h-4 text-blue-500" /> Infrastructure Status
+                    </h3>
+                    <button onClick={() => refreshAll()} className="text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-blue-300 transition-colors">
+                        Refresh All
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    {/* Critical Issues / Active Incidents */}
+                    <div className="glass-card p-8 border border-red-500/10 bg-red-500/[0.01]">
+                        <div className="flex items-center gap-3 mb-6">
+                            <BellDot className="w-5 h-5 text-red-500" />
+                            <h4 className="text-lg font-black text-white">Critical Issues</h4>
+                        </div>
+                        <div className="space-y-4">
+                            {(() => {
+                                const downApis = apis.filter(a => a.status === 'DOWN');
+                                const downHbs = heartbeats.filter(h => h.status === 'DOWN');
+                                const issues: any[] = [...downApis.map(a => ({ ...a, type: 'API' })), ...downHbs.map(h => ({ ...h, type: 'Heartbeat' }))];
+                                
+                                if (issues.length === 0) return (
+                                    <div className="py-10 text-center border border-dashed border-white/5 rounded-2xl">
+                                        <ShieldCheck className="w-8 h-8 text-emerald-500/20 mx-auto mb-2" />
+                                        <p className="text-xs text-gray-600 font-bold uppercase tracking-widest">No active incidents</p>
+                                    </div>
+                                );
+
+                                return issues.map((issue: any) => (
+                                    <div key={issue._id} className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-3 h-3 rounded-full bg-white/5 animate-pulse" />
-                                            <div className="space-y-2">
-                                                <div className="h-5 w-32 bg-white/5 rounded-full animate-pulse" />
-                                                <div className="h-2 w-20 bg-white/5 rounded-full animate-pulse" />
+                                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                            <div>
+                                                <div className="text-sm font-black text-white">{issue.name}</div>
+                                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{issue.type} • {issue.url || issue.slug}</div>
                                             </div>
                                         </div>
-                                        <div className="w-10 h-10 bg-white/5 rounded-xl animate-pulse" />
+                                        <button 
+                                            onClick={() => router.push(`/dashboard/${issue.type === 'API' ? issue._id : 'heartbeats/' + issue._id}`)}
+                                            className="text-[10px] font-black text-blue-400 uppercase tracking-widest hover:underline"
+                                        >
+                                            View Details
+                                        </button>
                                     </div>
-                                    <div className="space-y-6">
-                                        <div className="h-10 w-full bg-white/5 rounded-2xl animate-pulse" />
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="h-24 bg-white/5 rounded-[24px] animate-pulse" />
-                                            <div className="h-24 bg-white/5 rounded-[24px] animate-pulse" />
+                                ));
+                            })()}
+                        </div>
+                    </div>
+
+                    {/* Recent Statuses Mix */}
+                    <div className="glass-card p-8 border border-white/5">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Activity className="w-5 h-5 text-blue-500" />
+                            <h4 className="text-lg font-black text-white">Live Activity Feed</h4>
+                        </div>
+                        <div className="space-y-4">
+                            {(() => {
+                                const recentItems: any[] = [...apis.slice(0, 3), ...heartbeats.slice(0, 3)].sort((a: any, b: any) => new Date(b.lastChecked || b.lastPingAt).getTime() - new Date(a.lastChecked || a.lastPingAt).getTime());
+                                return recentItems.map((item: any) => (
+                                    <div key={item._id} className="flex items-center gap-4 p-4 border-b border-white/[0.03] last:border-0">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
+                                            item.status === 'UP' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 
+                                            item.status === 'DOWN' ? 'bg-red-500/10 border-red-500/20 text-red-400' : 
+                                            'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                                        }`}>
+                                            {item.url ? <Globe2 className="w-5 h-5" /> : <Heart className="w-5 h-5" />}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-start">
+                                                <span className="text-sm font-black text-white">{item.name}</span>
+                                                <span className="text-[9px] font-bold text-gray-600 uppercase tracking-tighter">
+                                                    {new Date(item.lastChecked || item.lastPingAt).toLocaleTimeString()}
+                                                </span>
+                                            </div>
+                                            <div className="text-[10px] font-medium text-gray-500 truncate max-w-[200px]">{item.url || item.slug}</div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </motion.div>
-                    ) : apis.length > 0 ? (
-                        <motion.div key="grid" variants={containerVariants} initial="hidden" animate="show" exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {apis.map((a) => (
-                                <motion.div key={a._id} variants={itemVariants} initial="hidden" animate="show" exit={{ opacity: 0, scale: 0.9 }}>
-                                    <ApiCard api={a} onClick={() => router.push(`/dashboard/${a._id}`)} />
-                                </motion.div>
-                            ))}
-                        </motion.div>
-                    ) : (
-                        <motion.div key="empty" variants={itemVariants} initial="hidden" animate="show" exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-white/5 rounded-[32px] bg-white/[0.01]">
-                            <div className="w-20 h-20 bg-blue-600/10 rounded-full flex items-center justify-center mb-6 border border-blue-500/20">
-                                <Activity className="w-10 h-10 text-blue-500 animate-pulse" />
-                            </div>
-                            <h3 className="text-2xl font-black text-white mb-2 tracking-tight">No Monitors Active</h3>
-                            <p className="text-gray-500 mb-8 font-medium">Start watching your infrastructure by adding your first endpoint.</p>
-                            <button onClick={() => setIsAdding(true)} className="premium-button btn-glow-blue flex items-center gap-3 px-8 text-lg text-white">
-                                <Plus className="w-6 h-6" /> Add Your First Monitor
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                                ));
+                            })()}
+                            {apis.length === 0 && heartbeats.length === 0 && (
+                                <p className="text-center py-10 text-xs text-gray-600">No recent activity detected.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
+
 
             {/* ─── Add API Modal ─────────────────────────────────────── */}
             <AnimatePresence>
@@ -302,7 +559,8 @@ export default function DashboardPage() {
                                 {tabs.map((tab) => {
                                     const isActive = activeTab === tab.id;
                                     const count = tab.id === 'assertions' ? newApi.assertions.length :
-                                        tab.id === 'advanced' ? newApi.headers.length + newApi.queryParams.length : 0;
+                                        tab.id === 'advanced' ? newApi.headers.length + newApi.queryParams.length : 
+                                        tab.id === 'notifications' ? newApi.alertChannels.length : 0;
                                     return (
                                         <button key={tab.id} type="button"
                                             id={`tour-tab-${tab.id}`}
@@ -442,6 +700,25 @@ export default function DashboardPage() {
                                             </motion.div>
                                         )}
 
+                                        {/* ── Notifications Tab ──────────────────── */}
+                                        {activeTab === 'notifications' && (
+                                            <motion.div key="notifications" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} className="space-y-6">
+                                                <div id="tour-form-notifications">
+                                                    <div className="mb-6 p-4 rounded-2xl" style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                                                        <p className="text-xs text-blue-300 leading-relaxed">
+                                                            <span className="font-black text-white">Multi-Channel Alerts:</span> Select which channels should receive notifications for this monitor. Incident alerts will be dispatched to all selected targets simultaneously.
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    <label className={LABEL}>Select Alert Channels</label>
+                                                    <AlertChannelSelector 
+                                                        selectedChannels={newApi.alertChannels}
+                                                        onChange={(ids) => setNewApi({ ...newApi, alertChannels: ids })}
+                                                    />
+                                                </div>
+                                            </motion.div>
+                                        )}
+
                                     </AnimatePresence>
                                 </div>
 
@@ -462,9 +739,13 @@ export default function DashboardPage() {
                                             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                                             Cancel
                                         </button>
-                                        {activeTab !== 'assertions' && (
+                                        {activeTab !== 'notifications' && (
                                             <button type="button"
-                                                onClick={() => setActiveTab(activeTab === 'basic' ? 'advanced' : 'assertions')}
+                                                onClick={() => {
+                                                    if (activeTab === 'basic') setActiveTab('advanced');
+                                                    else if (activeTab === 'advanced') setActiveTab('assertions');
+                                                    else if (activeTab === 'assertions') setActiveTab('notifications');
+                                                }}
                                                 className="px-5 py-2.5 rounded-xl font-bold text-sm text-white btn-glow-blue transition-all">
                                                 Next →
                                             </button>

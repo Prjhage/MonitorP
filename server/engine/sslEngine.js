@@ -8,7 +8,8 @@ const cron = require('node-cron');
 const SslMonitor = require('../models/SslMonitor');
 const User = require('../models/User');
 const { checkSslCert } = require('./sslChecker');
-const { sendSslExpiryWarning, sendSslExpiredAlert } = require('../utils/mailer');
+const { dispatchAlerts } = require('../services/alerts/alertDispatcher');
+const { isInMaintenance } = require('../utils/maintenanceCheck');
 
 // Alert thresholds in days (ordered: most urgent last so we match the closest)
 const ALERT_THRESHOLDS = [30, 15, 7, 1, 0];
@@ -65,20 +66,26 @@ const processSslMonitor = async (monitor, io) => {
         // ── Alert logic ────────────────────────────────────────────────────────
         const threshold = getAlertThreshold(result.daysRemaining);
         if (threshold !== null && threshold !== monitor.lastAlertDays) {
-            // This threshold hasn't been alerted yet — send the email
             try {
-                const user = await User.findById(monitor.userId);
-                if (user) {
-                    if (threshold === 0) {
-                        await sendSslExpiredAlert(user, monitor);
-                    } else {
-                        await sendSslExpiryWarning(user, monitor, threshold);
+                // Skip alert if monitor is inside an active maintenance window
+                const skip = await isInMaintenance(monitor._id, monitor.orgId, monitor.userId);
+                if (skip) {
+                    console.log(`[SSL] Maintenance window active — skipping alert for ${monitor.domain}`);
+                } else {
+                    const user = await User.findById(monitor.userId);
+                    if (user) {
+                        const monitorData = { ...monitor.toObject(), monitorType: 'ssl' };
+                        const simulatedIncident = {
+                            reason: threshold === 0 ? 'expired' : 'expiring_soon',
+                            daysRemaining: result.daysRemaining
+                        };
+                        await dispatchAlerts(monitorData, simulatedIncident, 'down');
+                        monitor.lastAlertDays = threshold;
+                        console.log(`[SSL] Alert dispatched for ${monitor.domain} at ${threshold}-day threshold`);
                     }
-                    monitor.lastAlertDays = threshold;
-                    console.log(`[SSL] Alert sent for ${monitor.domain} at ${threshold}-day threshold`);
                 }
             } catch (emailErr) {
-                console.error(`[SSL] Failed to send alert for ${monitor.domain}:`, emailErr.message);
+                console.error(`[SSL] Failed to dispatch alert for ${monitor.domain}:`, emailErr.message);
             }
         }
     }

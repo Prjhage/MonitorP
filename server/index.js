@@ -5,13 +5,22 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const connectDB = require('./config/db');
 
-const authRoutes = require('./routes/auth');
-const apiRoutes = require('./routes/api');
-const publicRoutes = require('./routes/public');
-const heartbeatRoutes = require('./routes/heartbeat');
-const pingRoutes = require('./routes/ping');
-const sslRoutes = require('./routes/ssl');
-const apiKeyRoutes = require('./routes/apiKey');
+const authRoutes           = require('./routes/auth');
+const apiRoutes            = require('./routes/api');
+const publicRoutes         = require('./routes/public');
+const heartbeatRoutes      = require('./routes/heartbeat');
+const pingRoutes           = require('./routes/ping');
+const sslRoutes            = require('./routes/ssl');
+const apiKeyRoutes         = require('./routes/apiKey');
+const tcpRoutes            = require('./routes/tcp');
+const dnsRoutes            = require('./routes/dns');
+const domainRoutes         = require('./routes/domains');
+const alertChannelRoutes   = require('./routes/alertChannels');
+const teamRoutes           = require('./routes/team');
+const maintenanceRoutes    = require('./routes/maintenance');
+const statusSubRoutes      = require('./routes/statusSubscribers');
+const auditLogRoutes       = require('./routes/auditLog');
+const notificationRoutes   = require('./routes/notifications');
 
 const app = express();
 const server = http.createServer(app);
@@ -61,6 +70,15 @@ app.use('/api/heartbeats', heartbeatRoutes);
 app.use('/ping', pingRoutes);
 app.use('/api/ssl', sslRoutes);
 app.use('/api/api-keys', apiKeyRoutes);
+app.use('/api/tcp', tcpRoutes);
+app.use('/api/dns', dnsRoutes);
+app.use('/api/domains', domainRoutes);
+app.use('/api/alert-channels', alertChannelRoutes);
+app.use('/api/team', teamRoutes);
+app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/status-subscribers', statusSubRoutes);
+app.use('/api/audit-log', auditLogRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/test-route', (req, res) => {
     res.json({ message: 'Routing is working' });
@@ -92,20 +110,28 @@ io.on('connection', (socket) => {
     });
 });
 
-const { startMonitoring } = require('./engine/pinger');
-const { startHeartbeatChecker } = require('./engine/heartbeatChecker');
-const { startSslEngine } = require('./engine/sslEngine');
-const { startApiKeyChecker } = require('./engine/apiKeyChecker');
+const { startMonitoring }          = require('./engine/pinger');
+const { startHeartbeatChecker }    = require('./engine/heartbeatChecker');
+const { startSslEngine }           = require('./engine/sslEngine');
+const { startApiKeyChecker }       = require('./engine/apiKeyChecker');
+const { startTcpEngine }           = require('./engine/tcpEngine');
+const { startDnsEngine }           = require('./engine/dnsEngine');
+const { startDomainExpiryEngine }  = require('./engine/domainExpiryEngine');
+const { startMaintenanceEngine }   = require('./engine/maintenanceEngine');
 
 // Start Server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-    // Start the monitoring engine
+    // Start the monitoring engines
     startMonitoring(io);
     startHeartbeatChecker(io);
     startSslEngine(io);
     startApiKeyChecker(io);
+    startTcpEngine(io);
+    startDnsEngine(io);
+    startDomainExpiryEngine();
+    startMaintenanceEngine();
 });
 
 
