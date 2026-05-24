@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -9,7 +9,7 @@ import api from '@/services/api';
 import { motion } from 'framer-motion';
 import { Shield, Mail, Lock, User, Building, ArrowRight } from 'lucide-react';
 
-export default function RegisterPage() {
+function RegisterForm() {
     const searchParams = useSearchParams();
     const inviteToken = searchParams.get('inviteToken');
     const inviteEmail = searchParams.get('email');
@@ -165,5 +165,17 @@ export default function RegisterPage() {
                 </p>
             </motion.div>
         </div>
+    );
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0b] text-gray-500 font-bold uppercase tracking-widest text-xs">
+                Loading Registration...
+            </div>
+        }>
+            <RegisterForm />
+        </Suspense>
     );
 }

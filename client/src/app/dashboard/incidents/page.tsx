@@ -20,14 +20,14 @@ export default function IncidentsPage() {
     
     const handleIncidentOpened = (incident: any) => {
       setIncidents(prev => [incident, ...prev]);
-      showToast('error', `🚨 ${incident.monitorName} just went DOWN`);
+      showToast(`🚨 ${incident.monitorName} just went DOWN`, 'error');
     };
 
     const handleIncidentResolved = (incident: any) => {
       setIncidents(prev => prev.map(i =>
         i._id === incident._id ? { ...i, ...incident } : i
       ));
-      showToast('success', `✅ ${incident.monitorName} recovered`);
+      showToast(`✅ ${incident.monitorName} recovered`, 'success');
     };
 
     socket.on('incident-opened', handleIncidentOpened);

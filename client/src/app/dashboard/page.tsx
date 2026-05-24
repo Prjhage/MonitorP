@@ -154,7 +154,7 @@ function AssertionEditor({ assertions, onChange }: { assertions: Assertion[]; on
 
 // ─── Main Dashboard Page ──────────────────────────────────────────────────────
 export default function DashboardPage() {
-    const { apis, heartbeats, ssls, tcps, dns, domains, loading, addApi, toggleApi, deleteApi } = useCache();
+    const { apis, heartbeats, ssls, tcps, dns, domains, loading, addApi, toggleApi, deleteApi, refreshAll } = useCache();
     const router = useRouter();
     const { showToast } = useToast();
     const { confirm: askConfirm } = useConfirm();
