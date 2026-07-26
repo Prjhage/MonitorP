@@ -294,60 +294,7 @@ export default function TcpDetailPage() {
                 </div>
             </div>
 
-            <div className="glass-card p-6 border border-white/5 mb-8">
-                <h3 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
-                    <BellDot className="w-4 h-4 text-amber-500" /> Notification History
-                </h3>
-                <div className="glass-card border border-white/[0.05] overflow-hidden">
-                    {loadingAlertLogs ? (
-                        <div className="p-8 flex items-center justify-center">
-                            <div className="w-6 h-6 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
-                        </div>
-                    ) : alertLogs.length === 0 ? (
-                        <div className="p-12 text-center">
-                            <p className="text-gray-500 italic font-medium">No notifications sent in the last 24 hours.</p>
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-white/[0.05]">
-                            {alertLogs.map((log: any) => (
-                                <div key={log._id} className="p-6 flex items-center justify-between hover:bg-white/[0.02] transition-all">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`p-3 rounded-2xl ${
-                                            log.status === 'sent' ? 'bg-emerald-500/10' : 'bg-red-500/10'
-                                        }`}>
-                                            {log.alertChannelId?.type === 'slack' ? <MessageSquare className="w-5 h-5 text-[#4A154B]" /> :
-                                             log.alertChannelId?.type === 'discord' ? <MessageSquare className="w-5 h-5 text-[#5865F2]" /> :
-                                             log.alertChannelId?.type === 'teams' ? <MessageSquare className="w-5 h-5 text-[#6264A7]" /> :
-                                             log.alertChannelId?.type === 'webhook' ? <Webhook className="w-5 h-5 text-gray-400" /> :
-                                             <Mail className="w-5 h-5 text-blue-400" />}
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-white font-bold">{log.alertChannelId?.name || 'Email Alert'}</span>
-                                                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black tracking-widest ${
-                                                    log.type === 'down' ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'
-                                                }`}>
-                                                    {log.type.toUpperCase()}
-                                                </span>
-                                            </div>
-                                            <p className="text-[10px] text-gray-500 font-bold mt-1">
-                                                {formatDistanceToNow(new Date(log.sentAt), { addSuffix: true })} • {format(new Date(log.sentAt), 'HH:mm:ss')}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest border ${
-                                            log.status === 'sent' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-red-500/10 border-red-500/20 text-red-500'
-                                        }`}>
-                                            {log.status.toUpperCase()}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+
 
             <div className="glass-card border border-white/5 overflow-hidden">
                 <div className="p-6 border-b border-white/5 bg-white/[0.02]">

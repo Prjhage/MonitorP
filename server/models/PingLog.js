@@ -24,5 +24,6 @@ const pingLogSchema = new mongoose.Schema({
 // Index for performance when querying logs for charts
 pingLogSchema.index({ apiId: 1, checkedAt: -1 });
 pingLogSchema.index({ apiId: 1, region: 1, checkedAt: -1 });
+pingLogSchema.index({ checkedAt: 1 }, { expireAfterSeconds: 3600 }); // Auto-delete logs older than 1 hour
 
 module.exports = mongoose.model('PingLog', pingLogSchema);

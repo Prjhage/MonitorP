@@ -73,13 +73,15 @@ const startHeartbeatChecker = (io) => {
                             console.log(`[Heartbeat] Maintenance window active — skipping TIMEOUT alert for ${heartbeat.name}`);
                             return;
                         }
-                        return triggerHeartbeatAlert(
+                        await triggerHeartbeatAlert(
                             heartbeat,
                             now,
                             'TIMEOUT',
                             `Job running too long: Started at ${startTimeHr.toLocaleTimeString()}, running for ${diffMins} minutes (Max: ${heartbeat.maxDuration} ${heartbeat.maxDurationUnit})`,
                             io
                         );
+                        heartbeat.currentJobStartedAt = null;
+                        return heartbeat.save();
                     }
                 });
             }

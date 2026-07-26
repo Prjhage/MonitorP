@@ -14,10 +14,10 @@ const runWithLimit = async (limit, items, iterator) => {
         const clean = () => executing.delete(p);
         p.then(clean).catch(clean);
         if (executing.size >= limit) {
-            await Promise.race(executing);
+            await Promise.race(executing).catch(() => {});
         }
     }
-    return Promise.all(results);
+    return Promise.allSettled(results);
 };
 
 module.exports = { runWithLimit };

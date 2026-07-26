@@ -56,7 +56,8 @@ const processDnsMonitor = async (monitor, io) => {
     // Respect check interval
     if (monitor.lastCheckedAt) {
         const minutesSinceLast = (Date.now() - new Date(monitor.lastCheckedAt).getTime()) / 60000;
-        if (minutesSinceLast < monitor.checkInterval) return;
+        // Subtract 0.1 mins (6 seconds) buffer to account for cron firing slightly early
+        if (minutesSinceLast < (monitor.checkInterval - 0.1)) return;
     }
 
     console.log(`[DNS] Checking records for: ${monitor.domain}`);

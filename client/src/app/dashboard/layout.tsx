@@ -6,8 +6,7 @@ import { motion } from 'framer-motion';
 import { Shield, LogIn, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/layout/Sidebar';
-import { TourProvider } from '@/context/TourContext';
-import TourGuide from '@/components/dashboard/TourGuide';
+
 
 function NotAuthenticated() {
   return (
@@ -82,8 +81,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <TourProvider>
-      <div className="h-screen flex flex-col md:flex-row bg-[#030303] relative overflow-hidden">
+    <div className="h-screen flex flex-col md:flex-row bg-[#030303] relative overflow-hidden">
         {/* Animated Background */}
         <div className="bg-animate">
           <div className="mesh-circle w-[600px] h-[600px] bg-blue-600/20 -top-[200px] -left-[100px]" />
@@ -109,8 +107,6 @@ export default function DashboardLayout({
         <main className="flex-1 overflow-y-auto relative z-10 pb-20 md:pb-0">
           {children}
         </main>
-        <TourGuide />
       </div>
-    </TourProvider>
   );
 }

@@ -288,10 +288,10 @@ export default function DnsPage() {
                                                 onChange={e => setForm({ ...form, checkInterval: parseInt(e.target.value) })}
                                                 className={INPUT}
                                             >
-                                                <option value={5}>Every 5 minutes</option>
-                                                <option value={15}>Every 15 minutes</option>
-                                                <option value={30}>Every 30 minutes</option>
-                                                <option value={60}>Every 1 hour</option>
+                                                <option value={5} className="bg-[#0c0c0e] text-white">Every 5 minutes</option>
+                                                <option value={15} className="bg-[#0c0c0e] text-white">Every 15 minutes</option>
+                                                <option value={30} className="bg-[#0c0c0e] text-white">Every 30 minutes</option>
+                                                <option value={60} className="bg-[#0c0c0e] text-white">Every 1 hour</option>
                                             </select>
                                         </div>
                                     </div>

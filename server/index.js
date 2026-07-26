@@ -11,7 +11,7 @@ const publicRoutes         = require('./routes/public');
 const heartbeatRoutes      = require('./routes/heartbeat');
 const pingRoutes           = require('./routes/ping');
 const sslRoutes            = require('./routes/ssl');
-const apiKeyRoutes         = require('./routes/apiKey');
+
 const tcpRoutes            = require('./routes/tcp');
 const dnsRoutes            = require('./routes/dns');
 const domainRoutes         = require('./routes/domains');
@@ -69,7 +69,7 @@ app.use('/api/public', publicRoutes);
 app.use('/api/heartbeats', heartbeatRoutes);
 app.use('/ping', pingRoutes);
 app.use('/api/ssl', sslRoutes);
-app.use('/api/api-keys', apiKeyRoutes);
+
 app.use('/api/tcp', tcpRoutes);
 app.use('/api/dns', dnsRoutes);
 app.use('/api/domains', domainRoutes);
@@ -113,7 +113,7 @@ io.on('connection', (socket) => {
 const { startMonitoring }          = require('./engine/pinger');
 const { startHeartbeatChecker }    = require('./engine/heartbeatChecker');
 const { startSslEngine }           = require('./engine/sslEngine');
-const { startApiKeyChecker }       = require('./engine/apiKeyChecker');
+
 const { startTcpEngine }           = require('./engine/tcpEngine');
 const { startDnsEngine }           = require('./engine/dnsEngine');
 const { startDomainExpiryEngine }  = require('./engine/domainExpiryEngine');
@@ -127,7 +127,7 @@ server.listen(PORT, () => {
     startMonitoring(io);
     startHeartbeatChecker(io);
     startSslEngine(io);
-    startApiKeyChecker(io);
+
     startTcpEngine(io);
     startDnsEngine(io);
     startDomainExpiryEngine();

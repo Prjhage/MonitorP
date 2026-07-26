@@ -14,7 +14,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         // Create singleton socket — only once for the entire app
         const s = io(SOCKET_URL, {
-            transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionAttempts: Infinity,
             reconnectionDelay: 1000,

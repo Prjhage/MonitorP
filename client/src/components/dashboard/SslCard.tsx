@@ -98,33 +98,31 @@ export default function SslCard({ monitor, onClick, onTogglePause, onDelete }: S
             whileHover={{ y: -4, scale: 1.01 }}
             transition={{ type: 'spring', damping: 22, stiffness: 220 }}
             onClick={onClick}
-            className="glass-card border border-white/[0.06] hover:border-white/[0.12] relative overflow-hidden cursor-pointer group transition-colors"
-            style={{ background: `radial-gradient(circle at top right, ${cfg.glowColor} 0%, transparent 70%)` }}
+            className={`glass-card border border-white/[0.06] hover:border-white/[0.12] relative overflow-hidden cursor-pointer group transition-all duration-300 ${!monitor.isActive ? 'opacity-60 grayscale-[50%]' : ''}`}
+            style={{ background: `radial-gradient(circle at top right, ${!monitor.isActive ? 'rgba(255,255,255,0.02)' : cfg.glowColor} 0%, transparent 70%)` }}
         >
-            {/* Paused overlay */}
-            {!monitor.isActive && (
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-2xl">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 bg-black/60 px-3 py-1.5 rounded-full border border-white/10">
-                        Paused
-                    </span>
-                </div>
-            )}
-
             <div className="p-6">
                 {/* ─ Header row ─────────────────────────────────────────── */}
                 <div className="flex items-start justify-between mb-5">
                     <div className="flex items-center gap-3 min-w-0">
                         {/* Status dot */}
                         <div className="relative shrink-0 mt-0.5">
-                            <div className={`w-2.5 h-2.5 rounded-full ${cfg.dotColor}`} />
-                            {(monitor.status === 'VALID' || monitor.status === 'EXPIRING_SOON') && (
+                            <div className={`w-2.5 h-2.5 rounded-full ${!monitor.isActive ? 'bg-gray-500' : cfg.dotColor}`} />
+                            {monitor.isActive && (monitor.status === 'VALID' || monitor.status === 'EXPIRING_SOON') && (
                                 <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${cfg.dotColor} animate-ping opacity-50`} />
                             )}
                         </div>
-                        <div className="min-w-0">
-                            <h3 className="text-white font-black text-base tracking-tight truncate group-hover:text-blue-300 transition-colors">
-                                {monitor.name}
-                            </h3>
+                        <div className="min-w-0 flex flex-col">
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-white font-black text-base tracking-tight truncate group-hover:text-blue-300 transition-colors">
+                                    {monitor.name}
+                                </h3>
+                                {!monitor.isActive && (
+                                    <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-gray-500/10 border border-gray-500/20 text-gray-400">
+                                        Paused
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-gray-500 font-mono text-xs flex items-center gap-1 mt-0.5 truncate">
                                 <Globe className="w-3 h-3 shrink-0" /> {monitor.domain}
                                 {monitor.inMaintenance && (

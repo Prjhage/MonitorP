@@ -35,6 +35,76 @@ const METHOD_COLORS: Record<string, string> = {
 
 // ─── KV Pair editor ───────────────────────────────────────────────────────────
 interface KVPair { key: string; value: string; }
+interface Assertion { type: string; operator: string; value: string; jsonPath?: string; }
+
+const ASSERTION_TYPES = [
+    { value: 'status_code', label: 'Status Code' },
+    { value: 'response_time', label: 'Response Time (ms)' },
+    { value: 'body_contains', label: 'Body Contains' },
+    { value: 'body_json_path', label: 'JSON Path Value' },
+];
+const OPERATORS: Record<string, { value: string; label: string }[]> = {
+    status_code: [{ value: 'eq', label: '= equals' }, { value: 'lt', label: '< less than' }, { value: 'gt', label: '> greater than' }],
+    response_time: [{ value: 'lt', label: '< less than' }, { value: 'gt', label: '> greater than' }, { value: 'eq', label: '= equals' }],
+    body_contains: [{ value: 'contains', label: 'contains' }, { value: 'not_contains', label: 'does not contain' }],
+    body_json_path: [{ value: 'eq', label: '= equals' }, { value: 'contains', label: 'contains' }, { value: 'not_contains', label: 'does not contain' }],
+};
+
+function AssertionEditor({ assertions, onChange }: { assertions: Assertion[]; onChange: (a: Assertion[]) => void }) {
+    const update = (i: number, field: keyof Assertion, val: string) => {
+        const u = [...assertions];
+        if (field === 'type') u[i] = { type: val, operator: OPERATORS[val][0].value, value: '' };
+        else u[i] = { ...u[i], [field]: val };
+        onChange(u);
+    };
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-4">
+                <span className={LABEL}>Assertion Rules</span>
+                <button type="button"
+                    onClick={() => onChange([...assertions, { type: 'response_time', operator: 'lt', value: '500' }])}
+                    className="flex items-center gap-1.5 text-xs font-bold text-white btn-glow-purple px-3 py-1.5 rounded-lg transition-all border border-violet-500/50 hover:bg-violet-500/20"
+                    style={{ background: 'rgba(139,92,246,0.1)' }}>
+                    <Plus className="w-3 h-3" /> Add Rule
+                </button>
+            </div>
+            {assertions.length === 0 && (
+                <div className="py-4 text-center text-xs text-gray-600 rounded-xl" style={{ border: '1px dashed rgba(255,255,255,0.07)' }}>
+                    No assertions added
+                </div>
+            )}
+            <div className="space-y-3">
+                {assertions.map((a, i) => (
+                    <div key={i} className="p-4 bg-white/[0.02] border border-white/[0.07] rounded-2xl space-y-2.5">
+                        <div className="flex gap-2">
+                            <select value={a.type} onChange={(e) => update(i, 'type', e.target.value)}
+                                className={INPUT + ' appearance-none pr-9 cursor-pointer'} style={{ ...SELECT_ARROW, ...INPUT_STYLE }}>
+                                {ASSERTION_TYPES.map(t => <option key={t.value} value={t.value} className="bg-[#0d0d0d]">{t.label}</option>)}
+                            </select>
+                            <select value={a.operator} onChange={(e) => update(i, 'operator', e.target.value)}
+                                className={INPUT + ' appearance-none pr-9 cursor-pointer'} style={{ ...SELECT_ARROW, ...INPUT_STYLE }}>
+                                {(OPERATORS[a.type] || []).map(o => <option key={o.value} value={o.value} className="bg-[#0d0d0d]">{o.label}</option>)}
+                            </select>
+                            <button type="button" onClick={() => onChange(assertions.filter((_, idx) => idx !== i))}
+                                className="p-3 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all border border-white/[0.07] shrink-0">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="flex gap-2">
+                            {a.type === 'body_json_path' && (
+                                <input value={a.jsonPath || ''} onChange={(e) => update(i, 'jsonPath', e.target.value)}
+                                    placeholder="JSON path" className={INPUT + ' flex-1'} style={INPUT_STYLE} />
+                            )}
+                            <input value={a.value} onChange={(e) => update(i, 'value', e.target.value)}
+                                placeholder="Expected value" className={INPUT + ' flex-1'} style={INPUT_STYLE} />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 function KVEditor({ label, pairs, onChange }: { label: string; pairs: KVPair[]; onChange: (p: KVPair[]) => void }) {
     const update = (i: number, field: 'key' | 'value', val: string) => {
         const u = [...pairs]; u[i] = { ...u[i], [field]: val }; onChange(u);
@@ -89,7 +159,7 @@ export default function DetailPage() {
     const [editForm, setEditForm] = useState<any>(null);
     const [saving, setSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
-    const [editTab, setEditTab] = useState<'basic' | 'advanced' | 'notifications'>('basic');
+    const [editTab, setEditTab] = useState<'basic' | 'advanced' | 'notifications' | 'assertions'>('basic');
 
     // Advanced Stats state
     const [advancedStats, setAdvancedStats] = useState<any>(null);
@@ -157,6 +227,7 @@ export default function DetailPage() {
             headers: m.headers || [],
             queryParams: m.queryParams || [],
             body: m.body || '',
+            assertions: m.assertions || [],
             alertChannels: m.alertChannels || [],
         });
         setEditTab('basic');
@@ -248,9 +319,9 @@ export default function DetailPage() {
 
                 {/* ─── Header ─────────────────────────────────────────────── */}
                 <motion.header variants={itemVariants} className="mb-12">
-                    <button onClick={() => router.push('/dashboard')}
+                    <button onClick={() => router.push('/dashboard/api')}
                         className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors group">
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Dashboard
+                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to API Monitors
                     </button>
 
                     <div className="flex justify-between items-start">
@@ -567,7 +638,7 @@ export default function DetailPage() {
                             {/* Sub-tabs */}
                             <div className="relative z-10 flex gap-1 px-6 py-3"
                                 style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                {(['basic', 'notifications', 'advanced'] as const).map((tab) => (
+                                {(['basic', 'notifications', 'advanced', 'assertions'] as const).map((tab) => (
                                     <button key={tab} type="button" onClick={() => setEditTab(tab)}
                                         className="px-4 py-2 rounded-xl text-sm font-bold capitalize transition-all"
                                         style={editTab === tab ? {
@@ -599,6 +670,26 @@ export default function DetailPage() {
                                             <AlertChannelSelector
                                                 selectedChannels={editForm.alertChannels}
                                                 onChange={(channels) => setEditForm({ ...editForm, alertChannels: channels })}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {editTab === 'assertions' && (
+                                        <div className="space-y-6">
+                                            <div className="p-4 rounded-2xl bg-violet-500/5 border border-violet-500/10 mb-2">
+                                                <div className="flex items-start gap-3">
+                                                    <CheckCircle2 className="w-5 h-5 text-violet-500 mt-0.5" />
+                                                    <div>
+                                                        <h4 className="text-sm font-black text-violet-200">Assertions</h4>
+                                                        <p className="text-[10px] text-violet-500/70 leading-relaxed font-medium mt-0.5">
+                                                            Assertions allow you to verify the response body, JSON paths, or status codes. If an assertion fails, the monitor will be marked as DEGRADED.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <AssertionEditor
+                                                assertions={editForm.assertions}
+                                                onChange={(assertions) => setEditForm({ ...editForm, assertions })}
                                             />
                                         </div>
                                     )}

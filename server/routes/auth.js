@@ -19,7 +19,7 @@ const SSL = require('../models/SslMonitor');
 const TCP = require('../models/TcpMonitor');
 const DNS = require('../models/DnsMonitor');
 const Domain = require('../models/DomainMonitor');
-const APIKey = require('../models/ApiKey');
+
 
 /**
  * Ensure a user has an org. Called on register AND on login for legacy users.
@@ -39,7 +39,6 @@ const ensureOrg = async (user) => {
             TCP.updateMany({ userId: user._id, orgId: { $exists: false } }, { orgId: user.orgId }),
             DNS.updateMany({ userId: user._id, orgId: { $exists: false } }, { orgId: user.orgId }),
             Domain.updateMany({ userId: user._id, orgId: { $exists: false } }, { orgId: user.orgId }),
-            APIKey.updateMany({ userId: user._id, orgId: { $exists: false } }, { orgId: user.orgId }),
         ]);
 
         return {
@@ -76,7 +75,6 @@ const ensureOrg = async (user) => {
         TCP.updateMany({ userId: user._id, orgId: { $exists: false } }, { orgId: org._id }),
         DNS.updateMany({ userId: user._id, orgId: { $exists: false } }, { orgId: org._id }),
         Domain.updateMany({ userId: user._id, orgId: { $exists: false } }, { orgId: org._id }),
-        APIKey.updateMany({ userId: user._id, orgId: { $exists: false } }, { orgId: org._id }),
     ]);
 
     return { orgId: org._id, role: 'owner' };

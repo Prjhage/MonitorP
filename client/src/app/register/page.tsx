@@ -91,6 +91,7 @@ function RegisterForm() {
                                 className="premium-input pl-12"
                                 placeholder="John Doe"
                                 required
+                                suppressHydrationWarning
                             />
                         </div>
                     </div>
@@ -108,6 +109,7 @@ function RegisterForm() {
                                 placeholder="Acme Inc."
                                 required
                                 disabled={!!inviteToken}
+                                suppressHydrationWarning
                             />
                         </div>
                     </div>
@@ -125,6 +127,7 @@ function RegisterForm() {
                                 placeholder="name@company.com"
                                 required
                                 disabled={!!inviteToken}
+                                suppressHydrationWarning
                             />
                         </div>
                     </div>
@@ -141,6 +144,7 @@ function RegisterForm() {
                                 className="premium-input pl-12"
                                 placeholder="••••••••"
                                 required
+                                suppressHydrationWarning
                             />
                         </div>
                     </div>

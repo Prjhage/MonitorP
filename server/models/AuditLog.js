@@ -32,7 +32,7 @@ const auditLogSchema = new mongoose.Schema({
     },
     resourceType: {
         type: String,
-        enum: ['api', 'ssl', 'tcp', 'dns', 'heartbeat', 'domain', 'apikey', 'alertchannel', 'team', 'maintenance', 'subscriber'],
+        enum: ['api', 'ssl', 'tcp', 'dns', 'heartbeat', 'domain', 'alertchannel', 'team', 'maintenance', 'subscriber'],
         required: true,
     },
     resourceId: {

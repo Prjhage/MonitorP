@@ -9,26 +9,6 @@ const { getOrgFilter, getOrgFields, canModify } = require('../utils/orgFilter');
 const { logAudit } = require('../utils/auditLogger');
 const { requireMinRole } = require('../middleware/rbac');
 
-// @desc    Test route to verify apiRoutes are reachable
-// @route   GET /api/apis/test-ping
-router.get('/test-ping', (req, res) => {
-    res.json({ message: 'API Routes are reachable', timestamp: new Date() });
-});
-
-// @desc    Diagnostic route to check API existence
-// @route   GET /api/apis/diag/:id
-router.get('/diag/:id', async (req, res) => {
-    try {
-        const api = await API.findById(req.params.id).lean();
-        res.json({
-            found: !!api,
-            id: req.params.id,
-            api: api ? { name: api.name, userId: api.userId } : null
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
 // @desc    Get all active APIs for logged in user
 // @route   GET /api/apis

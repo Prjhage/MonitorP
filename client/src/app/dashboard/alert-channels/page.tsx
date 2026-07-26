@@ -43,15 +43,6 @@ export default function AlertChannelsPage() {
     await api.post(`/alert-channels/${id}/test`);
   };
 
-  if (!isAtLeast('member')) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full py-20">
-        <Shield className="w-16 h-16 text-red-500 mb-6 opacity-20" size={64} />
-        <h2 className="text-2xl font-black text-white mb-2">Restricted Access</h2>
-        <p className="text-gray-500 max-w-sm text-center px-4">Viewer roles are restricted from managing alert channels.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">

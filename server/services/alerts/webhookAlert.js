@@ -3,6 +3,7 @@ const { decrypt } = require('../../utils/crypto');
 const { formatAlert } = require('./alertFormatter');
 
 const sendWebhookAlert = async (channel, monitor, incident, type) => {
+    const isDown = type === 'down';
     const formatted = formatAlert(monitor, incident, type);
     const decryptedUrl = decrypt(channel.webhookUrl);
 

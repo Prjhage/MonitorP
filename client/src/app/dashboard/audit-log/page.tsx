@@ -5,7 +5,7 @@ import api from '@/services/api';
 import { 
   ClipboardList, Search, Filter, Calendar, 
   User, Download, ChevronRight, Activity,
-  Globe, Shield, Key, Mail, Wrench, Loader2,
+  Globe, Shield, Mail, Wrench, Loader2,
   FileJson, ArrowUpDown, History
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,7 +32,6 @@ const RESOURCE_ICONS: Record<string, any> = {
   dns: Globe,
   heartbeat: History,
   domain: Globe,
-  apikey: Key,
   alertchannel: Mail,
   team: User,
   maintenance: Wrench,
@@ -108,7 +107,7 @@ export default function AuditLogPage() {
 
   const { isAtLeast } = useAuth();
 
-  if (!isAtLeast('member')) {
+  if (!isAtLeast('admin')) {
     return (
       <div className="flex flex-col items-center justify-center h-full py-20">
         <Shield className="w-16 h-16 text-red-500 mb-6 opacity-20" />

@@ -57,6 +57,7 @@ export default function LoginPage() {
                                 className="premium-input pl-12"
                                 placeholder="name@company.com"
                                 required
+                                suppressHydrationWarning
                             />
                         </div>
                     </div>
@@ -72,6 +73,7 @@ export default function LoginPage() {
                                 className="premium-input pl-12"
                                 placeholder="••••••••"
                                 required
+                                suppressHydrationWarning
                             />
                         </div>
                     </div>

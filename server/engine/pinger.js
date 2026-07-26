@@ -8,7 +8,7 @@ const User = require('../models/User');
 const cron = require('node-cron');
 const { dispatchAlerts } = require('../services/alerts/alertDispatcher');
 const { runWithLimit } = require('../utils/async');
-const { isInMaintenance } = require('../utils/maintenanceCheck');
+const { isUnderMaintenance } = require('../utils/maintenanceCheck');
 
 // Reuse connections to skip DNS/TCP/TLS handshake overhead on repeated pings
 const axiosInstance = axios.create({
@@ -190,7 +190,10 @@ const processPing = async (api, io) => {
     ]);
 
     // Handle incident transitions — only fetch User when actually needed
-    if (result.status === 'DOWN' && oldStatus !== 'DOWN') {
+    const isFailing = result.status === 'DOWN' || result.status === 'DEGRADED';
+    const wasFailing = oldStatus === 'DOWN' || oldStatus === 'DEGRADED';
+
+    if (isFailing && !wasFailing) {
         const incident = await Incident.create({
             apiId: api._id,
             userId: api.userId,
@@ -210,7 +213,7 @@ const processPing = async (api, io) => {
             });
         }
         // Skip alert if monitor is inside an active maintenance window
-        const skip = await isInMaintenance(api._id, api.orgId, api.userId);
+        const skip = await isUnderMaintenance(api._id, api.orgId, api.userId);
         if (!skip) {
             const user = await User.findById(api.userId);
             if (user) await dispatchAlerts({ ...api.toObject(), monitorType: 'api' }, incident, 'down');
@@ -218,7 +221,7 @@ const processPing = async (api, io) => {
             console.log(`[Pinger] Maintenance window active — skipping DOWN alert for ${api.name}`);
         }
 
-    } else if (result.status === 'UP' && oldStatus === 'DOWN') {
+    } else if (!isFailing && wasFailing) {
         const incident = await Incident.findOne({ apiId: api._id, status: 'OPEN' });
         if (incident) {
             incident.status = 'RESOLVED';
@@ -238,7 +241,7 @@ const processPing = async (api, io) => {
                     duration: incident.duration,
                 });
             }
-            const skip = await isInMaintenance(api._id, api.orgId, api.userId);
+            const skip = await isUnderMaintenance(api._id, api.orgId, api.userId);
             if (!skip) {
                 const user = await User.findById(api.userId);
                 if (user) await dispatchAlerts({ ...api.toObject(), monitorType: 'api' }, incident, 'recovery');
@@ -279,7 +282,7 @@ const startMonitoring = (io) => {
                         $expr: {
                             $lte: [
                                 { $add: ["$lastChecked", { $multiply: ["$interval", 60000] }] },
-                                new Date()
+                                new Date(Date.now() + 5000)
                             ]
                         }
                     }
@@ -299,7 +302,9 @@ const startMonitoring = (io) => {
                 // Add a small random jitter (0-2000ms) to each individual ping 
                 // within the minute to spread the load even further
                 await new Promise(resolve => setTimeout(resolve, Math.random() * 2000));
-                return processPing(api, io);
+                return processPing(api, io).catch(err => 
+                    console.error(`[Pinger] Uncaught error for API ${api._id}:`, err.message)
+                );
             });
 
             const duration = Date.now() - startTime;
